@@ -149,8 +149,8 @@ export default function useGameState(gameId) {
         if (!cancelled) setError(err.message);
       }
     };
-    fetchSpectator();
     interval = setInterval(fetchSpectator, 3000);
+    fetchSpectator();
     return () => {
       cancelled = true;
       if (interval) clearInterval(interval);
