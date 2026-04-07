@@ -27,7 +27,7 @@ function getCellMarker(state) {
   return null;
 }
 
-export default function Cell({ row, col, state = CELL_STATES.EMPTY, shipType, flash, onClick, onMouseEnter, onMouseLeave }) {
+export default function Cell({ row, col, state = CELL_STATES.EMPTY, shipType, onClick, onMouseEnter, onMouseLeave }) {
   const theme = useTheme();
   const cellColors = theme.custom.cell;
   const marker = getCellMarker(state);
@@ -45,7 +45,7 @@ export default function Cell({ row, col, state = CELL_STATES.EMPTY, shipType, fl
       sx={{
         width: CELL_SIZE,
         height: CELL_SIZE,
-        bgcolor: flash ? cellColors.flash : bgcolor,
+        bgcolor,
         border: `1px solid ${cellColors.border}`,
         display: 'flex',
         alignItems: 'center',
