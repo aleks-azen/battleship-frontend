@@ -38,11 +38,13 @@ export default function useGameState(gameId) {
   const [isAiMode, setIsAiMode] = useState(() => getStored(gameId, 'mode') === GAME_MODES.AI);
   const [aiShotPending, setAiShotPending] = useState(null);
   const [firing, setFiring] = useState(false);
+  const [playerShipTypeMap, setPlayerShipTypeMap] = useState(null);
   const updatedAtRef = useRef(null);
   const pollingRef = useRef(null);
   const firingRef = useRef(false);
   const aiTimerRef = useRef(null);
   const gameModeSetRef = useRef(false);
+  const submittingRef = useRef(false);
 
   const saveToken = useCallback((token) => {
     setPlayerToken(token);
@@ -58,6 +60,7 @@ export default function useGameState(gameId) {
       setError(null);
 
       if (state.playerBoard) setPlayerBoard(state.playerBoard);
+      if (state.playerShipTypeMap) setPlayerShipTypeMap(state.playerShipTypeMap);
       if (state.opponentBoard) setOpponentBoard(state.opponentBoard);
       if (state.phase) setPhase(state.phase);
       if (state.isMyTurn !== undefined) setIsMyTurn(state.isMyTurn);
@@ -122,6 +125,7 @@ export default function useGameState(gameId) {
         setPhase(GAME_PHASES.GAME_OVER);
         if (result.winner) setWinner(result.winner);
         if (result.playerBoard) setPlayerBoard(result.playerBoard);
+        if (result.playerShipTypeMap) setPlayerShipTypeMap(result.playerShipTypeMap);
         firingRef.current = false;
         setFiring(false);
         return;
@@ -134,6 +138,7 @@ export default function useGameState(gameId) {
           aiTimerRef.current = null;
           setAiShotPending(null);
           if (result.playerBoard) setPlayerBoard(result.playerBoard);
+          if (result.playerShipTypeMap) setPlayerShipTypeMap(result.playerShipTypeMap);
           if (result.phase) setPhase(result.phase);
           if (result.isMyTurn !== undefined) setIsMyTurn(result.isMyTurn);
           if (result.winner) setWinner(result.winner);
@@ -144,6 +149,7 @@ export default function useGameState(gameId) {
         if (result.phase) setPhase(result.phase);
         if (result.isMyTurn !== undefined) setIsMyTurn(result.isMyTurn);
         if (result.playerBoard) setPlayerBoard(result.playerBoard);
+        if (result.playerShipTypeMap) setPlayerShipTypeMap(result.playerShipTypeMap);
         firingRef.current = false;
         setFiring(false);
       }
@@ -155,19 +161,25 @@ export default function useGameState(gameId) {
   }, [gameId, playerToken, isMyTurn, phase, api, isAiMode, opponentBoard]);
 
   const submitPlacements = useCallback(async (placements) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     try {
       const result = await api.placeShips(gameId, placements, playerToken);
       if (result.phase) setPhase(result.phase);
       if (result.playerBoard) setPlayerBoard(result.playerBoard);
+      if (result.playerShipTypeMap) setPlayerShipTypeMap(result.playerShipTypeMap);
       if (result.isMyTurn !== undefined) setIsMyTurn(result.isMyTurn);
     } catch (err) {
       setError(err.message);
+    } finally {
+      submittingRef.current = false;
     }
   }, [gameId, playerToken, api]);
 
   return {
     phase,
     playerBoard,
+    playerShipTypeMap,
     opponentBoard,
     playerToken,
     isMyTurn,

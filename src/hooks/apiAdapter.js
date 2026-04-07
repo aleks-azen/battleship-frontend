@@ -81,6 +81,9 @@ function boardViewToGrid(boardView, isPlayer) {
   const grid = Array.from({ length: BOARD_SIZE }, () =>
     Array.from({ length: BOARD_SIZE }, () => CELL_STATES.EMPTY)
   );
+  const typeMap = Array.from({ length: BOARD_SIZE }, () =>
+    Array.from({ length: BOARD_SIZE }, () => null)
+  );
 
   const hits = boardView.hits || [];
   const shots = boardView.shots || [];
@@ -92,6 +95,7 @@ function boardViewToGrid(boardView, isPlayer) {
       const state = ship.sunk ? CELL_STATES.SUNK : null;
       for (const c of shipCells(ship)) {
         const key = coordKey(c.row, c.col);
+        typeMap[c.row][c.col] = ship.type;
         if (state) {
           grid[c.row][c.col] = state;
         } else if (hitSet.has(key)) {
@@ -117,7 +121,7 @@ function boardViewToGrid(boardView, isPlayer) {
     }
   }
 
-  return grid;
+  return { grid, typeMap };
 }
 
 function extractSunkShips(boardView) {
@@ -128,15 +132,16 @@ function extractSunkShips(boardView) {
 function adaptGameState(raw) {
   const mode = BACKEND_MODE_TO_FRONTEND[raw.mode] || raw.mode;
   const phase = statusToPhase(raw.status, mode);
-  const playerBoard = boardViewToGrid(raw.playerBoard, true);
-  const opponentBoard = boardViewToGrid(raw.opponentBoard, false);
+  const player = boardViewToGrid(raw.playerBoard, true);
+  const opponent = boardViewToGrid(raw.opponentBoard, false);
   const isMyTurn = raw.currentTurn === BACKEND_TURN.SELF;
   const winner = WINNER_MAP[raw.winnerId] || null;
 
   return {
     phase,
-    playerBoard,
-    opponentBoard,
+    playerBoard: player.grid,
+    playerShipTypeMap: player.typeMap,
+    opponentBoard: opponent.grid,
     isMyTurn,
     winner,
     mode,

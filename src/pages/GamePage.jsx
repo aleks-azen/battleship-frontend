@@ -100,6 +100,7 @@ export default function GamePage() {
   const {
     phase,
     playerBoard,
+    playerShipTypeMap,
     opponentBoard,
     isMyTurn,
     lastResult,
@@ -216,11 +217,13 @@ export default function GamePage() {
   const joinUrl = `${window.location.origin}/game/${gameId}/join`;
 
   const handleCopyLink = useCallback(() => {
-    navigator.clipboard.writeText(joinUrl).then(() => {
-      setCopied(true);
-      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
-    });
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(joinUrl).then(() => {
+        setCopied(true);
+        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+        copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+      }).catch(() => {});
+    }
   }, [joinUrl]);
 
   const handleRematch = useCallback(async () => {
@@ -260,15 +263,36 @@ export default function GamePage() {
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
             Share this link with your opponent:
           </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ContentCopyIcon />}
-            onClick={handleCopyLink}
-            sx={{ textTransform: 'none', fontSize: '13px' }}
-          >
-            {copied ? 'Copied!' : joinUrl}
-          </Button>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+            <Box
+              component="input"
+              readOnly
+              value={joinUrl}
+              onClick={(e) => e.target.select()}
+              sx={{
+                width: { xs: '260px', sm: '380px' },
+                px: 1.5,
+                py: 0.75,
+                fontSize: '13px',
+                fontFamily: 'monospace',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                color: 'text.primary',
+                outline: 'none',
+                '&:focus': { borderColor: 'primary.main' },
+              }}
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleCopyLink}
+              sx={{ textTransform: 'none', fontSize: '13px', minWidth: 'auto', px: 1.5 }}
+            >
+              {copied ? 'Copied!' : <ContentCopyIcon fontSize="small" />}
+            </Button>
+          </Box>
         </Box>
       )}
 
@@ -329,7 +353,7 @@ export default function GamePage() {
           }}
         >
           <Box sx={{ position: 'relative' }}>
-            <GameBoard board={playerBoard} showShips title="Your Fleet" />
+            <GameBoard board={playerBoard} shipTypeMap={playerShipTypeMap} showShips title="Your Fleet" />
             {aiShotPending && (
               <Typography
                 variant="caption"
@@ -424,7 +448,7 @@ export default function GamePage() {
                 mb: 3,
               }}
             >
-              <GameBoard board={playerBoard} showShips title="Your Fleet" />
+              <GameBoard board={playerBoard} shipTypeMap={playerShipTypeMap} showShips title="Your Fleet" />
               <GameBoard board={opponentBoard} showShips title="Enemy Fleet" />
             </Box>
 
