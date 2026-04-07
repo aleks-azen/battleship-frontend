@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -11,9 +11,11 @@ import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDiss
 import GameBoard from '../components/GameBoard';
 import ShipList from '../components/ShipList';
 import StatusBar from '../components/StatusBar';
-import useGameState from '../hooks/useGameState';
+import useApi from '../hooks/useApi';
+import useGameState, { getStored, setStored } from '../hooks/useGameState';
 import {
   GAME_PHASES,
+  GAME_MODES,
   BOARD_SIZE,
   SHIPS,
   ORIENTATIONS,
@@ -93,6 +95,8 @@ function findPlacementAtCell(placedShips, row, col) {
 
 export default function GamePage() {
   const { gameId } = useParams();
+  const navigate = useNavigate();
+  const api = useApi();
   const gameState = useGameState(gameId);
   const {
     phase,
@@ -232,13 +236,27 @@ export default function GamePage() {
   }, [fireShot]);
 
   const handleCopyLink = useCallback(() => {
-    const url = `${window.location.origin}/game/${gameId}`;
+    const url = `${window.location.origin}/game/${gameId}/join`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
       copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     });
   }, [gameId]);
+
+  const handleRematch = useCallback(async () => {
+    const mode = getStored(gameId, 'mode') || GAME_MODES.AI;
+    try {
+      const result = await api.createGame(mode);
+      if (result.playerToken) {
+        setStored(result.gameId, 'token', result.playerToken);
+      }
+      setStored(result.gameId, 'mode', mode);
+      navigate(`/game/${result.gameId}`);
+    } catch (err) {
+      gameState.setError(err.message);
+    }
+  }, [gameId, api, navigate, gameState]);
 
   const displayBoard = previewBoard || localBoard;
 
@@ -270,7 +288,7 @@ export default function GamePage() {
             onClick={handleCopyLink}
             sx={{ textTransform: 'none', fontSize: '13px' }}
           >
-            {copied ? 'Copied!' : `${window.location.origin}/game/${gameId}`}
+            {copied ? 'Copied!' : `${window.location.origin}/game/${gameId}/join`}
           </Button>
         </Box>
       )}
@@ -433,14 +451,24 @@ export default function GamePage() {
               <GameBoard board={opponentBoard} showShips title="Enemy Fleet" />
             </Box>
 
-            <Button
-              variant="contained"
-              size="large"
-              onClick={() => (window.location.href = '/')}
-              sx={{ textTransform: 'none', fontWeight: 700, px: 4 }}
-            >
-              Return to Menu
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleRematch}
+                sx={{ textTransform: 'none', fontWeight: 700, px: 4 }}
+              >
+                Rematch
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => navigate('/')}
+                sx={{ textTransform: 'none', fontWeight: 700, px: 4 }}
+              >
+                Back to Menu
+              </Button>
+            </Box>
           </Paper>
         </Box>
       )}
