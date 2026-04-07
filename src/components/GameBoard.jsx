@@ -3,15 +3,11 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import Cell from './Cell';
-import { BOARD_SIZE, ROW_LABELS, COL_LABELS, CELL_STATES } from '../content/game';
-
-const CELL_PX = { xs: 28, sm: 34, md: 38 };
-const LABEL_PX = { xs: 20, sm: 24, md: 28 };
+import { BOARD_SIZE, ROW_LABELS, COL_LABELS, CELL_STATES, CELL_SIZE, LABEL_SIZE } from '../content/game';
 
 export default function GameBoard({
   board,
   shipTypeMap,
-  flashCells,
   onCellClick,
   onCellHover,
   onCellLeave,
@@ -49,9 +45,9 @@ export default function GameBoard({
         sx={{
           display: 'inline-grid',
           gridTemplateColumns: {
-            xs: `${LABEL_PX.xs}px repeat(${BOARD_SIZE}, ${CELL_PX.xs}px)`,
-            sm: `${LABEL_PX.sm}px repeat(${BOARD_SIZE}, ${CELL_PX.sm}px)`,
-            md: `${LABEL_PX.md}px repeat(${BOARD_SIZE}, ${CELL_PX.md}px)`,
+            xs: `${LABEL_SIZE.xs}px repeat(${BOARD_SIZE}, ${CELL_SIZE.xs}px)`,
+            sm: `${LABEL_SIZE.sm}px repeat(${BOARD_SIZE}, ${CELL_SIZE.sm}px)`,
+            md: `${LABEL_SIZE.md}px repeat(${BOARD_SIZE}, ${CELL_SIZE.md}px)`,
           },
           alignItems: 'center',
           bgcolor: theme.custom.boardBg,
@@ -98,7 +94,6 @@ export default function GameBoard({
                 col={col}
                 state={getCellState(row, col)}
                 shipType={shipTypeMap?.[row]?.[col] || null}
-                flash={flashCells?.[row]?.[col] || false}
                 onClick={onCellClick}
                 onMouseEnter={onCellHover}
                 onMouseLeave={onCellLeave}

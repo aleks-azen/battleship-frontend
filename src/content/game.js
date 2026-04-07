@@ -56,3 +56,6 @@ export const WINNER = {
   ME: 'me',
   OPPONENT: 'opponent',
 };
+
+export const CELL_SIZE = { xs: 28, sm: 34, md: 38 };
+export const LABEL_SIZE = { xs: 20, sm: 24, md: 28 };

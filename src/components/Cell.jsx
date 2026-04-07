@@ -1,8 +1,6 @@
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
-import { CELL_STATES } from '../content/game';
-
-const CELL_SIZE = { xs: 28, sm: 34, md: 38 };
+import { CELL_STATES, CELL_SIZE } from '../content/game';
 
 function getCellBg(state, cellColors) {
   switch (state) {

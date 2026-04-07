@@ -129,6 +129,10 @@ export default function GamePage() {
     };
   }, []);
 
+  const isPlacing = phase === GAME_PHASES.PLACING || phase === GAME_PHASES.WAITING;
+  const isFiring = phase === GAME_PHASES.FIRING;
+  const isOver = phase === GAME_PHASES.GAME_OVER;
+
   useEffect(() => {
     if (!isPlacing) return;
     function handleKeyDown(e) {
@@ -141,10 +145,6 @@ export default function GamePage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPlacing]);
-
-  const isPlacing = phase === GAME_PHASES.PLACING || phase === GAME_PHASES.WAITING;
-  const isFiring = phase === GAME_PHASES.FIRING;
-  const isOver = phase === GAME_PHASES.GAME_OVER;
 
   const handlePlacementClick = useCallback((row, col) => {
     if (!selectedShip) return;
