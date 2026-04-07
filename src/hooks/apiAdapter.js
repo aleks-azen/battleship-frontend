@@ -130,6 +130,32 @@ function extractSunkShips(boardView) {
   return boardView.ships.filter((s) => s.sunk).map((s) => s.type);
 }
 
+function adaptSpectatorState(raw) {
+  const mode = BACKEND_MODE_TO_FRONTEND[raw.mode] || raw.mode;
+  const isCompleted = raw.status === BACKEND_STATUS.COMPLETED;
+  const phase = isCompleted ? GAME_PHASES.GAME_OVER : GAME_PHASES.FIRING;
+
+  // Completed: show all ships on both boards. In-progress: only shots/hits.
+  const p1 = boardViewToGrid(raw.player1Board, isCompleted);
+  const p2 = boardViewToGrid(raw.player2Board, isCompleted);
+
+  return {
+    phase,
+    player1Board: p1.grid,
+    player1TypeMap: p1.typeMap,
+    player2Board: p2.grid,
+    player2TypeMap: p2.typeMap,
+    currentTurn: raw.currentTurn,
+    winnerId: raw.winnerId,
+    mode,
+    updatedAt: raw.updatedAt,
+    sunkShips: {
+      player1: extractSunkShips(raw.player1Board),
+      player2: extractSunkShips(raw.player2Board),
+    },
+  };
+}
+
 function adaptGameState(raw) {
   const mode = BACKEND_MODE_TO_FRONTEND[raw.mode] || raw.mode;
   const phase = statusToPhase(raw.status, mode);
@@ -217,7 +243,15 @@ export default function useApiAdapter() {
     [api]
   );
 
+  const getSpectatorState = useCallback(
+    async (gameId) => {
+      const raw = await api.getGameState(gameId, null);
+      return adaptSpectatorState(raw);
+    },
+    [api]
+  );
+
   const getHistory = useCallback(() => api.getHistory(), [api]);
 
-  return { createGame, joinGame, placeShips, fire, getGameState, getHistory };
+  return { createGame, joinGame, placeShips, fire, getGameState, getSpectatorState, getHistory };
 }

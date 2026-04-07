@@ -13,6 +13,8 @@ import ShipList from '../components/ShipList';
 import StatusBar from '../components/StatusBar';
 import useApiAdapter from '../hooks/apiAdapter';
 import useGameState, { getStored, setStored } from '../hooks/useGameState';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   GAME_PHASES,
   GAME_MODES,
@@ -21,6 +23,8 @@ import {
   ORIENTATIONS,
   CELL_STATES,
   WINNER,
+  PLACEMENT_INSTRUCTIONS,
+  SPECTATOR_LABELS,
 } from '../content/game';
 
 function createEmptyBoard() {
@@ -111,6 +115,8 @@ export default function GamePage() {
     isAiMode,
     aiShotPending,
     firing,
+    isSpectator,
+    spectator,
     fireShot,
     submitPlacements,
     setError,
@@ -123,6 +129,7 @@ export default function GamePage() {
   const [selectedShip, setSelectedShip] = useState(SHIPS[0]);
   const [orientation, setOrientation] = useState(ORIENTATIONS.HORIZONTAL);
   const [copied, setCopied] = useState(false);
+  const [placementSubmitted, setPlacementSubmitted] = useState(false);
   const copyTimeoutRef = useRef(null);
   const linkInputRef = useRef(null);
 
@@ -209,8 +216,16 @@ export default function GamePage() {
       start: { row, col },
       orientation,
     }));
+    setPlacementSubmitted(true);
     submitPlacements(placements);
   }, [placedShips, submitPlacements]);
+
+  // Reset placement submitted state if submission fails
+  useEffect(() => {
+    if (error && placementSubmitted && isPlacing) {
+      setPlacementSubmitted(false);
+    }
+  }, [error, placementSubmitted, isPlacing]);
 
   const handleFire = useCallback((row, col) => {
     fireShot(row, col);
@@ -251,30 +266,98 @@ export default function GamePage() {
 
   const displayBoard = previewBoard || localBoard;
 
-  if (!playerToken) {
+  if (isSpectator) {
+    const isGameOver = spectator?.phase === GAME_PHASES.GAME_OVER;
+    const p1Label = spectator?.winnerId === 1
+      ? `${SPECTATOR_LABELS.PLAYER_1} (${SPECTATOR_LABELS.WINNER})`
+      : spectator?.winnerId === 2
+        ? `${SPECTATOR_LABELS.PLAYER_1} (${SPECTATOR_LABELS.LOSER})`
+        : SPECTATOR_LABELS.PLAYER_1;
+    const p2Label = spectator?.winnerId === 2
+      ? `${SPECTATOR_LABELS.PLAYER_2} (${SPECTATOR_LABELS.WINNER})`
+      : spectator?.winnerId === 1
+        ? `${SPECTATOR_LABELS.PLAYER_2} (${SPECTATOR_LABELS.LOSER})`
+        : SPECTATOR_LABELS.PLAYER_2;
+
     return (
-      <Box
-        sx={{
-          maxWidth: 500,
-          mx: 'auto',
-          px: 2,
-          py: 8,
-          textAlign: 'center',
-        }}
-      >
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
-          You are not a participant in this game
-        </Typography>
-        <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
-          You need a valid session to view this game.
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate('/')}
-          sx={{ textTransform: 'none', fontWeight: 600 }}
+      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 2, py: 3 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 1.5,
+            px: 2,
+            bgcolor: 'background.paper',
+            borderRadius: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            mb: 3,
+          }}
         >
-          Back to Menu
-        </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <VisibilityIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '16px', color: 'primary.main' }}>
+              {SPECTATOR_LABELS.SPECTATING}
+            </Typography>
+          </Box>
+          {!isGameOver && (
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+              {SPECTATOR_LABELS.IN_PROGRESS}
+              {spectator?.currentTurn === 1 && ` — ${SPECTATOR_LABELS.PLAYER_1}'s turn`}
+              {spectator?.currentTurn === 2 && ` — ${SPECTATOR_LABELS.PLAYER_2}'s turn`}
+            </Typography>
+          )}
+        </Box>
+
+        {spectator && (
+          <>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 4,
+                justifyContent: 'center',
+                alignItems: { xs: 'center', md: 'flex-start' },
+              }}
+            >
+              <GameBoard
+                board={spectator.player1Board}
+                shipTypeMap={spectator.player1TypeMap}
+                showShips={isGameOver}
+                title={p1Label}
+              />
+              <GameBoard
+                board={spectator.player2Board}
+                shipTypeMap={spectator.player2TypeMap}
+                showShips={isGameOver}
+                title={p2Label}
+              />
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/')}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
+              >
+                Back to Menu
+              </Button>
+            </Box>
+          </>
+        )}
+
+        {!spectator && !error && (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+              Loading game...
+            </Typography>
+          </Box>
+        )}
       </Box>
     );
   }
@@ -293,9 +376,10 @@ export default function GamePage() {
         lastResult={lastResult}
         sunkShips={sunkShips}
         winner={winner}
+        isAiMode={isAiMode}
       />
 
-      {phase === GAME_PHASES.WAITING && (
+      {phase === GAME_PHASES.WAITING && !isAiMode && (
         <Box sx={{ textAlign: 'center', mt: 2 }}>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
             Share this link with your opponent:
@@ -334,6 +418,15 @@ export default function GamePage() {
         </Box>
       )}
 
+      {isPlacing && isAiMode && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mt: 2 }}>
+          <SmartToyIcon sx={{ color: 'secondary.main', fontSize: 20 }} />
+          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+            Playing against AI
+          </Typography>
+        </Box>
+      )}
+
       {/* Placement phase */}
       {isPlacing && (
         <Box
@@ -366,13 +459,24 @@ export default function GamePage() {
                 )
               }
             />
+            <Box sx={{ px: 0.5 }}>
+              {PLACEMENT_INSTRUCTIONS.map((text, i) => (
+                <Typography
+                  key={i}
+                  variant="caption"
+                  sx={{ display: 'block', color: 'text.secondary', lineHeight: 1.6 }}
+                >
+                  {`${i + 1}. ${text}`}
+                </Typography>
+              ))}
+            </Box>
             <Button
               variant="contained"
-              disabled={placedShips.length !== SHIPS.length}
+              disabled={placedShips.length !== SHIPS.length || placementSubmitted}
               onClick={handleSubmit}
               sx={{ textTransform: 'none', fontWeight: 700, mt: 1 }}
             >
-              Confirm Placement
+              {placementSubmitted && !isAiMode ? 'Waiting for opponent...' : 'Confirm Placement'}
             </Button>
           </Box>
         </Box>

@@ -52,9 +52,24 @@ export const GAME_MODES = {
   MULTIPLAYER: 'MULTIPLAYER',
 };
 
+export const PLACEMENT_INSTRUCTIONS = [
+  'Press R or click rotate to change orientation.',
+  'Click board to place. Click placed ship to remove.',
+  'Confirm when all ships are placed.',
+];
+
 export const WINNER = {
   ME: 'me',
   OPPONENT: 'opponent',
+};
+
+export const SPECTATOR_LABELS = {
+  PLAYER_1: 'Player 1',
+  PLAYER_2: 'Player 2',
+  WINNER: 'Winner',
+  LOSER: 'Loser',
+  SPECTATING: 'Spectating',
+  IN_PROGRESS: 'Game in progress',
 };
 
 export const CELL_SIZE = { xs: 28, sm: 34, md: 38 };

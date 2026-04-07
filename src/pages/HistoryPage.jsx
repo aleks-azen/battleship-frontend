@@ -75,11 +75,16 @@ export default function HistoryPage() {
             </TableHead>
             <TableBody>
               {games.map((game) => (
-                <TableRow key={game.gameId} hover>
+                <TableRow
+                  key={game.gameId}
+                  hover
+                  onClick={() => navigate(`/game/${game.gameId}`)}
+                  sx={{ cursor: 'pointer' }}
+                >
                   <TableCell>
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: 600, fontFamily: 'monospace', color: 'text.secondary' }}
+                      sx={{ fontWeight: 600, fontFamily: 'monospace', color: 'primary.main' }}
                     >
                       {game.gameId.slice(0, 8)}...
                     </Typography>

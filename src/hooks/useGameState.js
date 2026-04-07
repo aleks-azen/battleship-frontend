@@ -39,12 +39,14 @@ export default function useGameState(gameId) {
   const [aiShotPending, setAiShotPending] = useState(null);
   const [firing, setFiring] = useState(false);
   const [playerShipTypeMap, setPlayerShipTypeMap] = useState(null);
+  const [spectator, setSpectator] = useState(null);
   const updatedAtRef = useRef(null);
   const pollingRef = useRef(null);
   const firingRef = useRef(false);
   const aiTimerRef = useRef(null);
   const gameModeSetRef = useRef(false);
   const submittingRef = useRef(false);
+  const isSpectator = !playerToken;
 
   const saveToken = useCallback((token) => {
     setPlayerToken(token);
@@ -97,6 +99,32 @@ export default function useGameState(gameId) {
       };
     }
   }, [phase, isMyTurn, gameId, playerToken, pollGameState, isAiMode]);
+
+  // Spectator polling
+  useEffect(() => {
+    if (!isSpectator || !gameId) return;
+    let cancelled = false;
+    const fetchSpectator = async () => {
+      try {
+        const state = await api.getSpectatorState(gameId);
+        if (cancelled) return;
+        if (state.updatedAt === updatedAtRef.current) return;
+        updatedAtRef.current = state.updatedAt;
+        setSpectator(state);
+        setPhase(state.phase);
+        setError(null);
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      }
+    };
+    fetchSpectator();
+    // Poll in-progress games; completed games only need one fetch
+    const interval = setInterval(fetchSpectator, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isSpectator, gameId, api]);
 
   useEffect(() => {
     return () => {
@@ -190,6 +218,8 @@ export default function useGameState(gameId) {
     isAiMode,
     aiShotPending,
     firing,
+    isSpectator,
+    spectator,
     saveToken,
     fireShot,
     submitPlacements,
