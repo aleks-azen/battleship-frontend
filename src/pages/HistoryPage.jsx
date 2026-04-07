@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -17,6 +17,7 @@ import Alert from '@mui/material/Alert';
 import useApiAdapter from '../hooks/apiAdapter';
 
 export default function HistoryPage() {
+  const navigate = useNavigate();
   const api = useApiAdapter();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,8 +34,7 @@ export default function HistoryPage() {
   return (
     <Box sx={{ maxWidth: 900, mx: 'auto', px: 2, py: 4 }}>
       <Button
-        component={Link}
-        to="/"
+        onClick={() => navigate('/')}
         startIcon={<ArrowBackIcon />}
         sx={{ textTransform: 'none', mb: 2, color: 'text.secondary' }}
       >
@@ -77,13 +77,12 @@ export default function HistoryPage() {
               {games.map((game) => (
                 <TableRow key={game.gameId} hover>
                   <TableCell>
-                    <Box
-                      component={Link}
-                      to={`/game/${game.gameId}`}
-                      sx={{ color: 'secondary.main', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, fontFamily: 'monospace', color: 'text.secondary' }}
                     >
                       {game.gameId.slice(0, 8)}...
-                    </Box>
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip

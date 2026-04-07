@@ -102,6 +102,7 @@ export default function GamePage() {
     playerBoard,
     playerShipTypeMap,
     opponentBoard,
+    playerToken,
     isMyTurn,
     lastResult,
     winner,
@@ -114,6 +115,8 @@ export default function GamePage() {
     submitPlacements,
     setError,
   } = useGameState(gameId);
+
+  const hasToken = Boolean(playerToken);
 
   const [localBoard, setLocalBoard] = useState(createEmptyBoard);
   const [shipTypeMap, setShipTypeMap] = useState(createEmptyMap);
@@ -249,6 +252,34 @@ export default function GamePage() {
   }, [gameId, api, navigate, setError]);
 
   const displayBoard = previewBoard || localBoard;
+
+  if (!hasToken) {
+    return (
+      <Box
+        sx={{
+          maxWidth: 500,
+          mx: 'auto',
+          px: 2,
+          py: 8,
+          textAlign: 'center',
+        }}
+      >
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
+          You are not a participant in this game
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
+          You need a valid session to view this game.
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => navigate('/')}
+          sx={{ textTransform: 'none', fontWeight: 600 }}
+        >
+          Back to Menu
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', px: 2, py: 3 }}>

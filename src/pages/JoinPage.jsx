@@ -6,7 +6,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import useApiAdapter from '../hooks/apiAdapter';
-import { setStored } from '../hooks/useGameState';
+import { getStored, setStored } from '../hooks/useGameState';
 import { GAME_MODES } from '../content/game';
 
 export default function JoinPage() {
@@ -19,6 +19,12 @@ export default function JoinPage() {
   useEffect(() => {
     if (!gameId || joinedRef.current) return;
     joinedRef.current = true;
+
+    const existingToken = getStored(gameId, 'token');
+    if (existingToken) {
+      navigate(`/game/${gameId}`, { replace: true });
+      return;
+    }
 
     api
       .joinGame(gameId)
