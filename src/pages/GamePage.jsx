@@ -23,6 +23,7 @@ import {
   ORIENTATIONS,
   CELL_STATES,
   WINNER,
+  STATUS_MESSAGES,
   PLACEMENT_INSTRUCTIONS,
   SPECTATOR_LABELS,
 } from '../content/game';
@@ -370,11 +371,16 @@ export default function GamePage() {
       )}
 
       <StatusBar
-        phase={isAiMode && phase === GAME_PHASES.WAITING ? GAME_PHASES.PLACING : phase}
+        phase={phase}
         isMyTurn={isMyTurn}
         lastResult={lastResult}
         sunkShips={sunkShips}
         winner={winner}
+        statusMessage={
+          isAiMode && phase === GAME_PHASES.WAITING ? STATUS_MESSAGES[GAME_PHASES.PLACING]
+          : placementSubmitted && phase === GAME_PHASES.WAITING ? STATUS_MESSAGES.WAITING_FOR_PLACEMENT
+          : undefined
+        }
       />
 
       {phase === GAME_PHASES.WAITING && !isAiMode && (

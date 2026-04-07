@@ -14,6 +14,14 @@ import useApiAdapter from '../hooks/apiAdapter';
 import { setStored } from '../hooks/useGameState';
 import { GAME_MODES } from '../content/game';
 
+function extractGameId(input) {
+  const trimmed = input.trim();
+  if (!trimmed.includes('/game/')) return trimmed;
+  const afterGame = trimmed.split('/game/')[1];
+  // Strip trailing /join, slashes, and query params
+  return afterGame.replace(/\/join\b/, '').replace(/[/?#].*$/, '').replace(/\/+$/, '');
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
   const api = useApiAdapter();
@@ -40,16 +48,17 @@ export default function HomePage() {
   }
 
   async function handleJoin() {
-    if (!joinId.trim()) return;
+    const gameId = extractGameId(joinId);
+    if (!gameId) return;
     setLoading(true);
     setError(null);
     try {
-      const result = await api.joinGame(joinId.trim());
+      const result = await api.joinGame(gameId);
       const token = result.playerToken;
       if (token) {
-        setStored(joinId.trim(), 'token', token);
+        setStored(gameId, 'token', token);
       }
-      navigate(`/game/${joinId.trim()}`);
+      navigate(`/game/${gameId}`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -160,7 +169,7 @@ export default function HomePage() {
         <Box sx={{ display: 'flex', gap: 1 }}>
           <TextField
             size="small"
-            placeholder="Enter game ID"
+            placeholder="Game ID or invite link"
             value={joinId}
             onChange={(e) => setJoinId(e.target.value)}
             fullWidth
@@ -168,7 +177,7 @@ export default function HomePage() {
           />
           <Button
             variant="outlined"
-            disabled={loading || !joinId.trim()}
+            disabled={loading || !extractGameId(joinId)}
             onClick={handleJoin}
             sx={{ textTransform: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}
           >

@@ -29,6 +29,7 @@ export const GAME_PHASES = {
 
 export const STATUS_MESSAGES = {
   [GAME_PHASES.WAITING]: 'Waiting for opponent to join...',
+  WAITING_FOR_PLACEMENT: 'Waiting for opponent to place ships...',
   [GAME_PHASES.PLACING]: 'Place your ships on the board',
   YOUR_TURN: 'Your turn - select a target on the enemy board',
   OPPONENT_TURN: "Opponent's turn - waiting...",
