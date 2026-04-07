@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -29,24 +29,32 @@ function createEmptyMap() {
   );
 }
 
-function canPlaceShip(board, row, col, size, orientation) {
+function shipCellCoords(row, col, size, orientation) {
+  const coords = [];
   for (let i = 0; i < size; i++) {
-    const r = orientation === ORIENTATIONS.VERTICAL ? row + i : row;
-    const c = orientation === ORIENTATIONS.HORIZONTAL ? col + i : col;
+    coords.push([
+      orientation === ORIENTATIONS.VERTICAL ? row + i : row,
+      orientation === ORIENTATIONS.HORIZONTAL ? col + i : col,
+    ]);
+  }
+  return coords;
+}
+
+function canPlaceShip(board, row, col, size, orientation) {
+  for (const [r, c] of shipCellCoords(row, col, size, orientation)) {
     if (r >= BOARD_SIZE || c >= BOARD_SIZE) return false;
     if (board[r][c] === CELL_STATES.SHIP) return false;
   }
   return true;
 }
 
-function placeShipOnBoard(board, typeMap, row, col, size, orientation, shipType) {
+function placeShipOnBoard(board, typeMap, placement) {
+  const { row, col, size, orientation, type } = placement;
   const newBoard = board.map((r) => [...r]);
   const newMap = typeMap.map((r) => [...r]);
-  for (let i = 0; i < size; i++) {
-    const r = orientation === ORIENTATIONS.VERTICAL ? row + i : row;
-    const c = orientation === ORIENTATIONS.HORIZONTAL ? col + i : col;
+  for (const [r, c] of shipCellCoords(row, col, size, orientation)) {
     newBoard[r][c] = CELL_STATES.SHIP;
-    newMap[r][c] = shipType;
+    newMap[r][c] = type;
   }
   return { board: newBoard, typeMap: newMap };
 }
@@ -54,9 +62,7 @@ function placeShipOnBoard(board, typeMap, row, col, size, orientation, shipType)
 function removeShipFromBoard(board, typeMap, placement) {
   const newBoard = board.map((r) => [...r]);
   const newMap = typeMap.map((r) => [...r]);
-  for (let i = 0; i < placement.size; i++) {
-    const r = placement.orientation === ORIENTATIONS.VERTICAL ? placement.row + i : placement.row;
-    const c = placement.orientation === ORIENTATIONS.HORIZONTAL ? placement.col + i : placement.col;
+  for (const [r, c] of shipCellCoords(placement.row, placement.col, placement.size, placement.orientation)) {
     newBoard[r][c] = CELL_STATES.EMPTY;
     newMap[r][c] = null;
   }
@@ -66,9 +72,7 @@ function removeShipFromBoard(board, typeMap, placement) {
 function applyPreview(board, row, col, size, orientation) {
   const newBoard = board.map((r) => [...r]);
   const valid = canPlaceShip(board, row, col, size, orientation);
-  for (let i = 0; i < size; i++) {
-    const r = orientation === ORIENTATIONS.VERTICAL ? row + i : row;
-    const c = orientation === ORIENTATIONS.HORIZONTAL ? col + i : col;
+  for (const [r, c] of shipCellCoords(row, col, size, orientation)) {
     if (r >= BOARD_SIZE || c >= BOARD_SIZE) continue;
     if (newBoard[r][c] === CELL_STATES.EMPTY) {
       newBoard[r][c] = valid ? CELL_STATES.PREVIEW_VALID : CELL_STATES.PREVIEW_INVALID;
@@ -77,35 +81,10 @@ function applyPreview(board, row, col, size, orientation) {
   return newBoard;
 }
 
-function clearPreview(board) {
-  return board.map((row) =>
-    row.map((cell) =>
-      cell === CELL_STATES.PREVIEW_VALID || cell === CELL_STATES.PREVIEW_INVALID
-        ? CELL_STATES.EMPTY
-        : cell
-    )
-  );
-}
-
-function getShipCells(placement) {
-  const cells = [];
-  for (let i = 0; i < placement.size; i++) {
-    const r = placement.orientation === ORIENTATIONS.VERTICAL ? placement.row + i : placement.row;
-    const c = placement.orientation === ORIENTATIONS.HORIZONTAL ? placement.col + i : placement.col;
-    cells.push([r, c]);
-  }
-  return cells;
-}
-
 function findPlacementAtCell(placedShips, row, col) {
-  return placedShips.find((p) => {
-    for (let i = 0; i < p.size; i++) {
-      const r = p.orientation === ORIENTATIONS.VERTICAL ? p.row + i : p.row;
-      const c = p.orientation === ORIENTATIONS.HORIZONTAL ? p.col + i : p.col;
-      if (r === row && c === col) return true;
-    }
-    return false;
-  });
+  return placedShips.find((p) =>
+    shipCellCoords(p.row, p.col, p.size, p.orientation).some(([r, c]) => r === row && c === col)
+  );
 }
 
 export default function GamePage() {
@@ -134,6 +113,12 @@ export default function GamePage() {
   const [flashCells, setFlashCells] = useState(null);
   const flashTimerRef = useRef(null);
 
+  useEffect(() => {
+    return () => {
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    };
+  }, []);
+
   const isPlacing = phase === GAME_PHASES.PLACING || phase === GAME_PHASES.WAITING;
   const isFiring = phase === GAME_PHASES.FIRING;
   const isOver = phase === GAME_PHASES.GAME_OVER;
@@ -150,16 +135,8 @@ export default function GamePage() {
 
   const handlePlacementClick = useCallback((row, col) => {
     if (!selectedShip) return;
-    const placedTypes = placedShips.map((p) => p.type);
-    if (placedTypes.includes(selectedShip.type)) return;
+    if (placedShips.some((p) => p.type === selectedShip.type)) return;
     if (!canPlaceShip(localBoard, row, col, selectedShip.size, orientation)) return;
-
-    const { board: newBoard, typeMap: newMap } = placeShipOnBoard(
-      localBoard, shipTypeMap, row, col, selectedShip.size, orientation, selectedShip.type
-    );
-    setLocalBoard(newBoard);
-    setShipTypeMap(newMap);
-    setPreviewBoard(null);
 
     const newPlacement = {
       type: selectedShip.type,
@@ -168,6 +145,11 @@ export default function GamePage() {
       size: selectedShip.size,
       orientation,
     };
+    const { board: newBoard, typeMap: newMap } = placeShipOnBoard(localBoard, shipTypeMap, newPlacement);
+    setLocalBoard(newBoard);
+    setShipTypeMap(newMap);
+    setPreviewBoard(null);
+
     const newPlacements = [...placedShips, newPlacement];
     setPlacedShips(newPlacements);
 
@@ -199,19 +181,16 @@ export default function GamePage() {
         : ORIENTATIONS.HORIZONTAL;
       const { board: boardWithout, typeMap: mapWithout } = removeShipFromBoard(localBoard, shipTypeMap, existing);
       if (canPlaceShip(boardWithout, existing.row, existing.col, existing.size, newOri)) {
-        const { board: newBoard, typeMap: newMap } = placeShipOnBoard(
-          boardWithout, mapWithout, existing.row, existing.col, existing.size, newOri, existing.type
-        );
+        const rotated = { ...existing, orientation: newOri };
+        const { board: newBoard, typeMap: newMap } = placeShipOnBoard(boardWithout, mapWithout, rotated);
         setLocalBoard(newBoard);
         setShipTypeMap(newMap);
         setPlacedShips(
-          placedShips.map((p) =>
-            p.type === existing.type ? { ...p, orientation: newOri } : p
-          )
+          placedShips.map((p) => p.type === existing.type ? rotated : p)
         );
         setPreviewBoard(null);
       } else {
-        triggerFlash(getShipCells(existing));
+        triggerFlash(shipCellCoords(existing.row, existing.col, existing.size, existing.orientation));
       }
       return;
     }

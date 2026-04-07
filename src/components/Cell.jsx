@@ -51,7 +51,7 @@ export default function Cell({ row, col, state = CELL_STATES.EMPTY, shipType, fl
       sx={{
         width: CELL_SIZE,
         height: CELL_SIZE,
-        bgcolor: flash ? '#f44336' : bgcolor,
+        bgcolor: flash ? cellColors.flash : bgcolor,
         border: `1px solid ${cellColors.border}`,
         display: 'flex',
         alignItems: 'center',

@@ -72,6 +72,7 @@ const theme = createTheme({
       previewInvalid: 'rgba(244, 67, 54, 0.35)',
       hover: rgba(ocean, 0.15),
       border: '#bbdefb',
+      flash: '#f44336',
     },
     shipColors: {
       CARRIER: '#5c6bc0',
