@@ -116,8 +116,6 @@ export default function GamePage() {
     setError,
   } = useGameState(gameId);
 
-  const hasToken = Boolean(playerToken);
-
   const [localBoard, setLocalBoard] = useState(createEmptyBoard);
   const [shipTypeMap, setShipTypeMap] = useState(createEmptyMap);
   const [previewBoard, setPreviewBoard] = useState(null);
@@ -253,7 +251,7 @@ export default function GamePage() {
 
   const displayBoard = previewBoard || localBoard;
 
-  if (!hasToken) {
+  if (!playerToken) {
     return (
       <Box
         sx={{
