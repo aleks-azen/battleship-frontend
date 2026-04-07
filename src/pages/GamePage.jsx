@@ -11,7 +11,7 @@ import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDiss
 import GameBoard from '../components/GameBoard';
 import ShipList from '../components/ShipList';
 import StatusBar from '../components/StatusBar';
-import useApi from '../hooks/useApi';
+import useApiAdapter from '../hooks/apiAdapter';
 import useGameState, { getStored, setStored } from '../hooks/useGameState';
 import {
   GAME_PHASES,
@@ -96,7 +96,7 @@ function findPlacementAtCell(placedShips, row, col) {
 export default function GamePage() {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const api = useApi();
+  const api = useApiAdapter();
   const {
     phase,
     playerBoard,

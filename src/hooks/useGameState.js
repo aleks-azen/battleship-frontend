@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import useApi from './useApi';
+import useApiAdapter from './apiAdapter';
 import { GAME_PHASES, BOARD_SIZE, CELL_STATES, GAME_MODES } from '../content/game';
 
 function createEmptyBoard() {
@@ -25,7 +25,7 @@ export function setStored(gameId, key, value) {
 }
 
 export default function useGameState(gameId) {
-  const api = useApi();
+  const api = useApiAdapter();
   const [phase, setPhase] = useState(GAME_PHASES.WAITING);
   const [playerBoard, setPlayerBoard] = useState(createEmptyBoard);
   const [opponentBoard, setOpponentBoard] = useState(createEmptyBoard);

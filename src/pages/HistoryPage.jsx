@@ -14,10 +14,10 @@ import Paper from '@mui/material/Paper';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import useApi from '../hooks/useApi';
+import useApiAdapter from '../hooks/apiAdapter';
 
 export default function HistoryPage() {
-  const api = useApi();
+  const api = useApiAdapter();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

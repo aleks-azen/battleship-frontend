@@ -10,13 +10,13 @@ import Alert from '@mui/material/Alert';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import GroupIcon from '@mui/icons-material/Group';
 import AnchorIcon from '@mui/icons-material/Anchor';
-import useApi from '../hooks/useApi';
+import useApiAdapter from '../hooks/apiAdapter';
 import { setStored } from '../hooks/useGameState';
 import { GAME_MODES } from '../content/game';
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const api = useApi();
+  const api = useApiAdapter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [joinId, setJoinId] = useState('');

@@ -5,14 +5,14 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import useApi from '../hooks/useApi';
+import useApiAdapter from '../hooks/apiAdapter';
 import { setStored } from '../hooks/useGameState';
 import { GAME_MODES } from '../content/game';
 
 export default function JoinPage() {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const api = useApi();
+  const api = useApiAdapter();
   const [error, setError] = useState(null);
   const joinedRef = useRef(false);
 

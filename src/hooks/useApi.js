@@ -32,8 +32,8 @@ export default function useApi() {
     return request('POST', `/games/${gameId}/join`);
   }, []);
 
-  const placeShips = useCallback((gameId, placements, playerToken) => {
-    return request('POST', `/games/${gameId}/place`, { placements }, playerToken);
+  const placeShips = useCallback((gameId, ships, playerToken) => {
+    return request('POST', `/games/${gameId}/ships`, { ships }, playerToken);
   }, []);
 
   const fire = useCallback((gameId, row, col, playerToken) => {
