@@ -100,10 +100,11 @@ export default function useGameState(gameId) {
     }
   }, [phase, isMyTurn, gameId, playerToken, pollGameState, isAiMode]);
 
-  // Spectator polling
+  // Spectator polling — stops once game is completed
   useEffect(() => {
     if (!isSpectator || !gameId) return;
     let cancelled = false;
+    let interval = null;
     const fetchSpectator = async () => {
       try {
         const state = await api.getSpectatorState(gameId);
@@ -113,16 +114,19 @@ export default function useGameState(gameId) {
         setSpectator(state);
         setPhase(state.phase);
         setError(null);
+        if (state.phase === GAME_PHASES.GAME_OVER && interval) {
+          clearInterval(interval);
+          interval = null;
+        }
       } catch (err) {
         if (!cancelled) setError(err.message);
       }
     };
     fetchSpectator();
-    // Poll in-progress games; completed games only need one fetch
-    const interval = setInterval(fetchSpectator, 3000);
+    interval = setInterval(fetchSpectator, 3000);
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
     };
   }, [isSpectator, gameId, api]);
 

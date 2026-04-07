@@ -91,6 +91,13 @@ function applyPreview(board, row, col, size, orientation) {
   return newBoard;
 }
 
+function spectatorLabel(playerNumber, winnerId) {
+  const base = SPECTATOR_LABELS[`PLAYER_${playerNumber}`];
+  if (!winnerId) return base;
+  const suffix = winnerId === playerNumber ? SPECTATOR_LABELS.WINNER : SPECTATOR_LABELS.LOSER;
+  return `${base} (${suffix})`;
+}
+
 function findPlacementAtCell(placedShips, row, col) {
   return placedShips.find((p) =>
     shipCellCoords(p.row, p.col, p.size, p.orientation).some(([r, c]) => r === row && c === col)
@@ -222,10 +229,10 @@ export default function GamePage() {
 
   // Reset placement submitted state if submission fails
   useEffect(() => {
-    if (error && placementSubmitted && isPlacing) {
+    if (error && placementSubmitted) {
       setPlacementSubmitted(false);
     }
-  }, [error, placementSubmitted, isPlacing]);
+  }, [error, placementSubmitted]);
 
   const handleFire = useCallback((row, col) => {
     fireShot(row, col);
@@ -268,16 +275,8 @@ export default function GamePage() {
 
   if (isSpectator) {
     const isGameOver = spectator?.phase === GAME_PHASES.GAME_OVER;
-    const p1Label = spectator?.winnerId === 1
-      ? `${SPECTATOR_LABELS.PLAYER_1} (${SPECTATOR_LABELS.WINNER})`
-      : spectator?.winnerId === 2
-        ? `${SPECTATOR_LABELS.PLAYER_1} (${SPECTATOR_LABELS.LOSER})`
-        : SPECTATOR_LABELS.PLAYER_1;
-    const p2Label = spectator?.winnerId === 2
-      ? `${SPECTATOR_LABELS.PLAYER_2} (${SPECTATOR_LABELS.WINNER})`
-      : spectator?.winnerId === 1
-        ? `${SPECTATOR_LABELS.PLAYER_2} (${SPECTATOR_LABELS.LOSER})`
-        : SPECTATOR_LABELS.PLAYER_2;
+    const p1Label = spectatorLabel(1, spectator?.winnerId);
+    const p2Label = spectatorLabel(2, spectator?.winnerId);
 
     return (
       <Box sx={{ maxWidth: 1200, mx: 'auto', px: 2, py: 3 }}>
@@ -371,12 +370,11 @@ export default function GamePage() {
       )}
 
       <StatusBar
-        phase={phase}
+        phase={isAiMode && phase === GAME_PHASES.WAITING ? GAME_PHASES.PLACING : phase}
         isMyTurn={isMyTurn}
         lastResult={lastResult}
         sunkShips={sunkShips}
         winner={winner}
-        isAiMode={isAiMode}
       />
 
       {phase === GAME_PHASES.WAITING && !isAiMode && (
