@@ -37,7 +37,8 @@ export default function JoinPage() {
       });
 
     return () => { mounted = false; };
-  }, [gameId, api, navigate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, navigate]);
 
   return (
     <Box
