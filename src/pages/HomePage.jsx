@@ -28,6 +28,7 @@ export default function HomePage() {
       if (token) {
         sessionStorage.setItem(`battleship-token-${result.gameId}`, token);
       }
+      sessionStorage.setItem(`battleship-mode-${result.gameId}`, mode);
       navigate(`/game/${result.gameId}`);
     } catch (err) {
       setError(err.message);

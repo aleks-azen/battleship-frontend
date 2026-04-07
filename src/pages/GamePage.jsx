@@ -4,7 +4,10 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
+import Paper from '@mui/material/Paper';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import GameBoard from '../components/GameBoard';
 import ShipList from '../components/ShipList';
 import StatusBar from '../components/StatusBar';
@@ -99,8 +102,12 @@ export default function GamePage() {
     winner,
     error,
     sunkShips,
+    isAiMode,
+    aiShotPending,
+    firing,
     fireShot,
     submitPlacements,
+    setGameMode,
   } = gameState;
 
   const [localBoard, setLocalBoard] = useState(createEmptyBoard);
@@ -219,9 +226,11 @@ export default function GamePage() {
   }, [placedShips, submitPlacements]);
 
   const handleFire = useCallback((row, col) => {
-    if (!isMyTurn || !isFiring) return;
+    if (!isMyTurn || !isFiring || firing) return;
+    const cellState = opponentBoard?.[row]?.[col];
+    if (cellState === CELL_STATES.HIT || cellState === CELL_STATES.MISS || cellState === CELL_STATES.SUNK) return;
     fireShot(row, col);
-  }, [isMyTurn, isFiring, fireShot]);
+  }, [isMyTurn, isFiring, firing, fireShot, opponentBoard]);
 
   const handleCopyLink = useCallback(() => {
     const url = `${window.location.origin}/game/${gameId}`;
@@ -324,39 +333,115 @@ export default function GamePage() {
             alignItems: { xs: 'center', md: 'flex-start' },
           }}
         >
-          <GameBoard board={playerBoard} showShips title="Your Fleet" />
-          <GameBoard
-            board={opponentBoard}
-            onCellClick={isMyTurn ? handleFire : undefined}
-            showShips={false}
-            title="Enemy Waters"
-          />
+          <Box sx={{ position: 'relative' }}>
+            <GameBoard board={playerBoard} showShips title="Your Fleet" />
+            {aiShotPending && (
+              <Typography
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  textAlign: 'center',
+                  mt: 1,
+                  color: 'secondary.main',
+                  fontWeight: 600,
+                }}
+              >
+                AI is firing...
+              </Typography>
+            )}
+          </Box>
+          <Box>
+            <GameBoard
+              board={opponentBoard}
+              onCellClick={isMyTurn && !firing ? handleFire : undefined}
+              showShips={false}
+              title="Enemy Waters"
+            />
+            {!isMyTurn && !isAiMode && (
+              <Typography
+                variant="body2"
+                sx={{ textAlign: 'center', mt: 1, color: 'text.secondary', fontStyle: 'italic' }}
+              >
+                Waiting for opponent...
+              </Typography>
+            )}
+          </Box>
         </Box>
       )}
 
-      {/* Game over */}
+      {/* Game over overlay */}
       {isOver && (
-        <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Box
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1300,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <Paper
+            elevation={8}
             sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: 4,
-              justifyContent: 'center',
-              alignItems: { xs: 'center', md: 'flex-start' },
-              mb: 3,
+              p: 4,
+              maxWidth: 900,
+              width: '90%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              textAlign: 'center',
+              borderRadius: 3,
             }}
           >
-            <GameBoard board={playerBoard} showShips title="Your Fleet" />
-            <GameBoard board={opponentBoard} showShips title="Enemy Fleet" />
-          </Box>
-          <Button
-            variant="contained"
-            onClick={() => (window.location.href = '/')}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
-            New Game
-          </Button>
+            <Box sx={{ mb: 3 }}>
+              {winner === 'me' ? (
+                <EmojiEventsIcon sx={{ fontSize: 64, color: '#ffc107' }} />
+              ) : (
+                <SentimentVeryDissatisfiedIcon sx={{ fontSize: 64, color: 'text.secondary' }} />
+              )}
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 800,
+                  mt: 1,
+                  color: winner === 'me' ? '#ffc107' : 'error.main',
+                }}
+              >
+                {winner === 'me' ? 'Victory!' : 'Defeat!'}
+              </Typography>
+              <Typography variant="body1" sx={{ color: 'text.secondary', mt: 1 }}>
+                {winner === 'me'
+                  ? 'You sank all enemy ships!'
+                  : 'Your fleet has been destroyed.'}
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 3,
+                justifyContent: 'center',
+                alignItems: { xs: 'center', md: 'flex-start' },
+                mb: 3,
+              }}
+            >
+              <GameBoard board={playerBoard} showShips title="Your Fleet" />
+              <GameBoard board={opponentBoard} showShips title="Enemy Fleet" />
+            </Box>
+
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => (window.location.href = '/')}
+              sx={{ textTransform: 'none', fontWeight: 700, px: 4 }}
+            >
+              Return to Menu
+            </Button>
+          </Paper>
         </Box>
       )}
     </Box>

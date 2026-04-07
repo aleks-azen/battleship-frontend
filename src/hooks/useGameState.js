@@ -24,6 +24,14 @@ function storeToken(gameId, token) {
   }
 }
 
+function getStoredMode(gameId) {
+  try {
+    return sessionStorage.getItem(`battleship-mode-${gameId}`);
+  } catch {
+    return null;
+  }
+}
+
 export default function useGameState(gameId) {
   const api = useApi();
   const [phase, setPhase] = useState(GAME_PHASES.WAITING);
@@ -35,8 +43,13 @@ export default function useGameState(gameId) {
   const [winner, setWinner] = useState(null);
   const [error, setError] = useState(null);
   const [sunkShips, setSunkShips] = useState({ mine: [], theirs: [] });
+  const [gameMode, setGameMode] = useState(() => getStoredMode(gameId));
+  const [aiShotPending, setAiShotPending] = useState(null);
+  const [firing, setFiring] = useState(false);
   const updatedAtRef = useRef(null);
   const pollingRef = useRef(null);
+
+  const isAiMode = gameMode === 'AI';
 
   const saveToken = useCallback((token) => {
     setPlayerToken(token);
@@ -57,13 +70,15 @@ export default function useGameState(gameId) {
       if (state.winner) setWinner(state.winner);
       if (state.sunkShips) setSunkShips(state.sunkShips);
       if (state.lastResult) setLastResult(state.lastResult);
+      if (state.mode && !gameMode) setGameMode(state.mode);
     } catch (err) {
       setError(err.message);
     }
-  }, [gameId, playerToken, api]);
+  }, [gameId, playerToken, api, gameMode]);
 
   useEffect(() => {
     if (!gameId || !playerToken) return;
+    if (isAiMode) return;
 
     const shouldPoll =
       phase === GAME_PHASES.WAITING ||
@@ -81,22 +96,48 @@ export default function useGameState(gameId) {
         pollingRef.current = null;
       }
     };
-  }, [phase, isMyTurn, gameId, playerToken, pollGameState]);
+  }, [phase, isMyTurn, gameId, playerToken, pollGameState, isAiMode]);
 
   const fireShot = useCallback(async (row, col) => {
-    if (!isMyTurn || phase !== GAME_PHASES.FIRING) return;
+    if (!isMyTurn || phase !== GAME_PHASES.FIRING || firing) return;
+    setFiring(true);
     try {
       const result = await api.fire(gameId, row, col, playerToken);
       setLastResult(result);
       if (result.opponentBoard) setOpponentBoard(result.opponentBoard);
-      if (result.phase) setPhase(result.phase);
-      if (result.isMyTurn !== undefined) setIsMyTurn(result.isMyTurn);
-      if (result.winner) setWinner(result.winner);
       if (result.sunkShips) setSunkShips(result.sunkShips);
+
+      if (result.gameOver || result.phase === GAME_PHASES.GAME_OVER) {
+        setPhase(GAME_PHASES.GAME_OVER);
+        if (result.winner) setWinner(result.winner);
+        if (result.playerBoard) setPlayerBoard(result.playerBoard);
+        setFiring(false);
+        return;
+      }
+
+      // AI mode: show AI counter-shot with a delay
+      if (isAiMode && result.aiShot) {
+        setIsMyTurn(false);
+        setAiShotPending(result.aiShot);
+        setTimeout(() => {
+          setAiShotPending(null);
+          if (result.playerBoard) setPlayerBoard(result.playerBoard);
+          if (result.phase) setPhase(result.phase);
+          if (result.isMyTurn !== undefined) setIsMyTurn(result.isMyTurn);
+          if (result.winner) setWinner(result.winner);
+          setFiring(false);
+        }, 500);
+      } else {
+        if (result.phase) setPhase(result.phase);
+        if (result.isMyTurn !== undefined) setIsMyTurn(result.isMyTurn);
+        if (result.playerBoard) setPlayerBoard(result.playerBoard);
+        setFiring(false);
+      }
     } catch (err) {
       setError(err.message);
+      setFiring(false);
     }
-  }, [gameId, playerToken, isMyTurn, phase, api]);
+  }, [gameId, playerToken, isMyTurn, phase, api, isAiMode, firing]);
 
   const submitPlacements = useCallback(async (placements) => {
     try {
@@ -119,11 +160,16 @@ export default function useGameState(gameId) {
     winner,
     error,
     sunkShips,
+    gameMode,
+    isAiMode,
+    aiShotPending,
+    firing,
     saveToken,
     fireShot,
     submitPlacements,
     setPhase,
     setPlayerBoard,
     setError,
+    setGameMode,
   };
 }
