@@ -1,8 +1,14 @@
+---
+paths:
+  - "src/**/*.jsx"
+  - "src/**/*.js"
+---
+
 # Frontend Rules — battleship-frontend
 
 ## Framework & Styling
 - React with functional components and hooks only (no class components)
-- MUI components + sx prop for all styling (no external CSS files, no styled-components)
+- MUI components + sx prop for all styling. NOT `makeStyles`, `useStyles`, `styled()`, or separate CSS files — those are MUI v4 patterns
 - Emotion for MUI's CSS-in-JS (already included with MUI)
 
 ## Content Separation
