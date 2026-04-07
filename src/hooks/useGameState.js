@@ -55,6 +55,7 @@ export default function useGameState(gameId) {
       const state = await api.getGameState(gameId, playerToken);
       if (state.updatedAt === updatedAtRef.current) return;
       updatedAtRef.current = state.updatedAt;
+      setError(null);
 
       if (state.playerBoard) setPlayerBoard(state.playerBoard);
       if (state.opponentBoard) setOpponentBoard(state.opponentBoard);

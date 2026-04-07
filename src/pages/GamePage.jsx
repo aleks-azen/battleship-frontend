@@ -121,30 +121,30 @@ export default function GamePage() {
   const [selectedShip, setSelectedShip] = useState(SHIPS[0]);
   const [orientation, setOrientation] = useState(ORIENTATIONS.HORIZONTAL);
   const [copied, setCopied] = useState(false);
-  const [flashCells, setFlashCells] = useState(null);
-  const flashTimerRef = useRef(null);
   const copyTimeoutRef = useRef(null);
 
   useEffect(() => {
     return () => {
-      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     };
   }, []);
 
+  useEffect(() => {
+    if (!isPlacing) return;
+    function handleKeyDown(e) {
+      if (e.key === 'r' || e.key === 'R') {
+        setOrientation((o) =>
+          o === ORIENTATIONS.HORIZONTAL ? ORIENTATIONS.VERTICAL : ORIENTATIONS.HORIZONTAL
+        );
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlacing]);
+
   const isPlacing = phase === GAME_PHASES.PLACING || phase === GAME_PHASES.WAITING;
   const isFiring = phase === GAME_PHASES.FIRING;
   const isOver = phase === GAME_PHASES.GAME_OVER;
-
-  const triggerFlash = useCallback((cells) => {
-    const flash = Array.from({ length: BOARD_SIZE }, () =>
-      Array.from({ length: BOARD_SIZE }, () => false)
-    );
-    cells.forEach(([r, c]) => { flash[r][c] = true; });
-    setFlashCells(flash);
-    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-    flashTimerRef.current = setTimeout(() => setFlashCells(null), 400);
-  }, []);
 
   const handlePlacementClick = useCallback((row, col) => {
     if (!selectedShip) return;
@@ -170,46 +170,24 @@ export default function GamePage() {
     setSelectedShip(nextShip || null);
   }, [selectedShip, placedShips, localBoard, shipTypeMap, orientation]);
 
-  const handlePlacementRightClick = useCallback((row, col) => {
-    const placement = findPlacementAtCell(placedShips, row, col);
-    if (!placement) return;
-
-    const { board: newBoard, typeMap: newMap } = removeShipFromBoard(localBoard, shipTypeMap, placement);
-    setLocalBoard(newBoard);
-    setShipTypeMap(newMap);
-    setPreviewBoard(null);
-    setPlacedShips(placedShips.filter((p) => p.type !== placement.type));
-    if (!selectedShip) {
-      setSelectedShip(SHIPS.find((s) => s.type === placement.type) || null);
-    }
-  }, [placedShips, localBoard, shipTypeMap, selectedShip]);
-
   const handleBoardClick = useCallback((row, col) => {
     if (!isPlacing) return;
 
     const existing = findPlacementAtCell(placedShips, row, col);
     if (existing) {
-      const newOri = existing.orientation === ORIENTATIONS.HORIZONTAL
-        ? ORIENTATIONS.VERTICAL
-        : ORIENTATIONS.HORIZONTAL;
-      const { board: boardWithout, typeMap: mapWithout } = removeShipFromBoard(localBoard, shipTypeMap, existing);
-      if (canPlaceShip(boardWithout, existing.row, existing.col, existing.size, newOri)) {
-        const rotated = { ...existing, orientation: newOri };
-        const { board: newBoard, typeMap: newMap } = placeShipOnBoard(boardWithout, mapWithout, rotated);
-        setLocalBoard(newBoard);
-        setShipTypeMap(newMap);
-        setPlacedShips(
-          placedShips.map((p) => p.type === existing.type ? rotated : p)
-        );
-        setPreviewBoard(null);
-      } else {
-        triggerFlash(shipCellCoords(existing.row, existing.col, existing.size, existing.orientation));
+      const { board: newBoard, typeMap: newMap } = removeShipFromBoard(localBoard, shipTypeMap, existing);
+      setLocalBoard(newBoard);
+      setShipTypeMap(newMap);
+      setPreviewBoard(null);
+      setPlacedShips(placedShips.filter((p) => p.type !== existing.type));
+      if (!selectedShip) {
+        setSelectedShip(SHIPS.find((s) => s.type === existing.type) || null);
       }
       return;
     }
 
     handlePlacementClick(row, col);
-  }, [isPlacing, handlePlacementClick, placedShips, localBoard, shipTypeMap, triggerFlash]);
+  }, [isPlacing, handlePlacementClick, placedShips, localBoard, shipTypeMap, selectedShip]);
 
   const handleHover = useCallback((row, col) => {
     if (!isPlacing || !selectedShip) return;
@@ -308,9 +286,7 @@ export default function GamePage() {
           <GameBoard
             board={displayBoard}
             shipTypeMap={shipTypeMap}
-            flashCells={flashCells}
             onCellClick={handleBoardClick}
-            onCellRightClick={handlePlacementRightClick}
             onCellHover={handleHover}
             onCellLeave={handleLeave}
             showShips

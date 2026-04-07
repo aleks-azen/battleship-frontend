@@ -1,17 +1,18 @@
+import { Fragment } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import Cell from './Cell';
 import { BOARD_SIZE, ROW_LABELS, COL_LABELS, CELL_STATES } from '../content/game';
 
-const LABEL_SIZE = { xs: 20, sm: 24, md: 28 };
+const CELL_PX = { xs: 28, sm: 34, md: 38 };
+const LABEL_PX = { xs: 20, sm: 24, md: 28 };
 
 export default function GameBoard({
   board,
   shipTypeMap,
   flashCells,
   onCellClick,
-  onCellRightClick,
   onCellHover,
   onCellLeave,
   showShips = true,
@@ -44,32 +45,44 @@ export default function GameBoard({
         </Typography>
       )}
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', bgcolor: theme.custom.boardBg, borderRadius: 1, p: 0.5 }}>
-        {/* Column labels */}
-        <Box sx={{ display: 'flex', ml: LABEL_SIZE }}>
-          {COL_LABELS.map((label) => (
-            <Box
-              key={label}
-              sx={{
-                width: { xs: 28, sm: 34, md: 38 },
-                textAlign: 'center',
-                fontSize: { xs: '10px', sm: '11px', md: '12px' },
-                fontWeight: 700,
-                color: theme.custom.labelColor,
-              }}
-            >
-              {label}
-            </Box>
-          ))}
-        </Box>
+      <Box
+        sx={{
+          display: 'inline-grid',
+          gridTemplateColumns: {
+            xs: `${LABEL_PX.xs}px repeat(${BOARD_SIZE}, ${CELL_PX.xs}px)`,
+            sm: `${LABEL_PX.sm}px repeat(${BOARD_SIZE}, ${CELL_PX.sm}px)`,
+            md: `${LABEL_PX.md}px repeat(${BOARD_SIZE}, ${CELL_PX.md}px)`,
+          },
+          alignItems: 'center',
+          bgcolor: theme.custom.boardBg,
+          borderRadius: 1,
+          p: 0.5,
+        }}
+      >
+        {/* Corner spacer */}
+        <Box />
 
-        {/* Rows */}
+        {/* Column labels */}
+        {COL_LABELS.map((label) => (
+          <Box
+            key={label}
+            sx={{
+              textAlign: 'center',
+              fontSize: { xs: '10px', sm: '11px', md: '12px' },
+              fontWeight: 700,
+              color: theme.custom.labelColor,
+              lineHeight: 2,
+            }}
+          >
+            {label}
+          </Box>
+        ))}
+
+        {/* Rows: label + cells */}
         {Array.from({ length: BOARD_SIZE }, (_, row) => (
-          <Box key={row} sx={{ display: 'flex', alignItems: 'center' }}>
-            {/* Row label */}
+          <Fragment key={row}>
             <Box
               sx={{
-                width: LABEL_SIZE,
                 textAlign: 'center',
                 fontSize: { xs: '10px', sm: '11px', md: '12px' },
                 fontWeight: 700,
@@ -78,8 +91,6 @@ export default function GameBoard({
             >
               {ROW_LABELS[row]}
             </Box>
-
-            {/* Cells */}
             {Array.from({ length: BOARD_SIZE }, (_, col) => (
               <Cell
                 key={col}
@@ -89,12 +100,11 @@ export default function GameBoard({
                 shipType={shipTypeMap?.[row]?.[col] || null}
                 flash={flashCells?.[row]?.[col] || false}
                 onClick={onCellClick}
-                onContextMenu={onCellRightClick}
                 onMouseEnter={onCellHover}
                 onMouseLeave={onCellLeave}
               />
             ))}
-          </Box>
+          </Fragment>
         ))}
       </Box>
     </Box>

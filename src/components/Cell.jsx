@@ -29,7 +29,7 @@ function getCellMarker(state) {
   return null;
 }
 
-export default function Cell({ row, col, state = CELL_STATES.EMPTY, shipType, flash, onClick, onContextMenu, onMouseEnter, onMouseLeave }) {
+export default function Cell({ row, col, state = CELL_STATES.EMPTY, shipType, flash, onClick, onMouseEnter, onMouseLeave }) {
   const theme = useTheme();
   const cellColors = theme.custom.cell;
   const marker = getCellMarker(state);
@@ -42,10 +42,6 @@ export default function Cell({ row, col, state = CELL_STATES.EMPTY, shipType, fl
   return (
     <Box
       onClick={() => onClick?.(row, col)}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        onContextMenu?.(row, col);
-      }}
       onMouseEnter={() => onMouseEnter?.(row, col)}
       onMouseLeave={() => onMouseLeave?.(row, col)}
       sx={{
