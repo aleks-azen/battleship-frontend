@@ -11,6 +11,7 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import GroupIcon from '@mui/icons-material/Group';
 import AnchorIcon from '@mui/icons-material/Anchor';
 import useApi from '../hooks/useApi';
+import { setStored } from '../hooks/useGameState';
 import { GAME_MODES } from '../content/game';
 
 export default function HomePage() {
@@ -27,9 +28,9 @@ export default function HomePage() {
       const result = await api.createGame(mode);
       const token = result.playerToken;
       if (token) {
-        sessionStorage.setItem(`battleship-token-${result.gameId}`, token);
+        setStored(result.gameId, 'token', token);
       }
-      sessionStorage.setItem(`battleship-mode-${result.gameId}`, mode);
+      setStored(result.gameId, 'mode', mode);
       navigate(`/game/${result.gameId}`);
     } catch (err) {
       setError(err.message);
@@ -46,7 +47,7 @@ export default function HomePage() {
       const result = await api.joinGame(joinId.trim());
       const token = result.playerToken;
       if (token) {
-        sessionStorage.setItem(`battleship-token-${joinId.trim()}`, token);
+        setStored(joinId.trim(), 'token', token);
       }
       navigate(`/game/${joinId.trim()}`);
     } catch (err) {

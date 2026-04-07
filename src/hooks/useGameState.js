@@ -8,7 +8,7 @@ function createEmptyBoard() {
   );
 }
 
-function getStored(gameId, key) {
+export function getStored(gameId, key) {
   try {
     return sessionStorage.getItem(`battleship-${key}-${gameId}`);
   } catch {
@@ -16,7 +16,7 @@ function getStored(gameId, key) {
   }
 }
 
-function setStored(gameId, key, value) {
+export function setStored(gameId, key, value) {
   try {
     sessionStorage.setItem(`battleship-${key}-${gameId}`, value);
   } catch {
@@ -42,7 +42,7 @@ export default function useGameState(gameId) {
   const pollingRef = useRef(null);
   const firingRef = useRef(false);
   const aiTimerRef = useRef(null);
-  const gameModeSetRef = useRef(isAiMode);
+  const gameModeSetRef = useRef(false);
 
   const saveToken = useCallback((token) => {
     setPlayerToken(token);
@@ -66,6 +66,7 @@ export default function useGameState(gameId) {
       if (state.mode && !gameModeSetRef.current) {
         gameModeSetRef.current = true;
         setIsAiMode(state.mode === GAME_MODES.AI);
+        setStored(gameId, 'mode', state.mode);
       }
     } catch (err) {
       setError(err.message);
@@ -113,6 +114,11 @@ export default function useGameState(gameId) {
       if (result.sunkShips) setSunkShips(result.sunkShips);
 
       if (result.gameOver || result.phase === GAME_PHASES.GAME_OVER) {
+        if (aiTimerRef.current) {
+          clearTimeout(aiTimerRef.current);
+          aiTimerRef.current = null;
+        }
+        setAiShotPending(null);
         setPhase(GAME_PHASES.GAME_OVER);
         if (result.winner) setWinner(result.winner);
         if (result.playerBoard) setPlayerBoard(result.playerBoard);
