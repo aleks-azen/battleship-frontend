@@ -5,6 +5,7 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
+import { useTheme } from '@mui/material/styles';
 import { SHIPS, ORIENTATIONS } from '../content/game';
 
 export default function ShipList({
@@ -14,6 +15,8 @@ export default function ShipList({
   orientation,
   onToggleOrientation,
 }) {
+  const theme = useTheme();
+  const shipColors = theme.custom.shipColors;
   const placedTypes = placedShips.map((p) => p.type);
 
   return (
@@ -78,7 +81,7 @@ export default function ShipList({
                       width: 12,
                       height: 12,
                       borderRadius: '2px',
-                      bgcolor: isPlaced ? 'action.disabled' : 'secondary.main',
+                      bgcolor: isPlaced ? 'action.disabled' : (shipColors[ship.type] || 'secondary.main'),
                     }}
                   />
                 ))}

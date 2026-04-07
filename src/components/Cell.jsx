@@ -29,10 +29,15 @@ function getCellMarker(state) {
   return null;
 }
 
-export default function Cell({ row, col, state = CELL_STATES.EMPTY, onClick, onContextMenu, onMouseEnter, onMouseLeave }) {
+export default function Cell({ row, col, state = CELL_STATES.EMPTY, shipType, flash, onClick, onContextMenu, onMouseEnter, onMouseLeave }) {
   const theme = useTheme();
   const cellColors = theme.custom.cell;
   const marker = getCellMarker(state);
+
+  let bgcolor = getCellBg(state, cellColors);
+  if (state === CELL_STATES.SHIP && shipType && theme.custom.shipColors[shipType]) {
+    bgcolor = theme.custom.shipColors[shipType];
+  }
 
   return (
     <Box
@@ -46,7 +51,7 @@ export default function Cell({ row, col, state = CELL_STATES.EMPTY, onClick, onC
       sx={{
         width: CELL_SIZE,
         height: CELL_SIZE,
-        bgcolor: getCellBg(state, cellColors),
+        bgcolor: flash ? '#f44336' : bgcolor,
         border: `1px solid ${cellColors.border}`,
         display: 'flex',
         alignItems: 'center',

@@ -8,6 +8,8 @@ const LABEL_SIZE = { xs: 20, sm: 24, md: 28 };
 
 export default function GameBoard({
   board,
+  shipTypeMap,
+  flashCells,
   onCellClick,
   onCellRightClick,
   onCellHover,
@@ -84,6 +86,8 @@ export default function GameBoard({
                 row={row}
                 col={col}
                 state={getCellState(row, col)}
+                shipType={shipTypeMap?.[row]?.[col] || null}
+                flash={flashCells?.[row]?.[col] || false}
                 onClick={onCellClick}
                 onContextMenu={onCellRightClick}
                 onMouseEnter={onCellHover}

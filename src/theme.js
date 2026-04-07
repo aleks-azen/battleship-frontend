@@ -73,6 +73,13 @@ const theme = createTheme({
       hover: rgba(ocean, 0.15),
       border: '#bbdefb',
     },
+    shipColors: {
+      CARRIER: '#5c6bc0',
+      BATTLESHIP: '#26a69a',
+      CRUISER: '#ab47bc',
+      SUBMARINE: '#ffa726',
+      DESTROYER: '#ef5350',
+    },
     navBg: rgba(navy, 0.95),
     boardBg: darken(bg, 0.02),
     labelColor: lighten(navy, 0.3),
