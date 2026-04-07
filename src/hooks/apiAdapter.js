@@ -77,7 +77,18 @@ function shipCells(ship) {
   return cells;
 }
 
+function emptyGrid() {
+  return {
+    grid: Array.from({ length: BOARD_SIZE }, () =>
+      Array.from({ length: BOARD_SIZE }, () => CELL_STATES.EMPTY)
+    ),
+    typeMap: null,
+  };
+}
+
 function boardViewToGrid(boardView, isPlayer) {
+  if (!boardView) return emptyGrid();
+
   const grid = Array.from({ length: BOARD_SIZE }, () =>
     Array.from({ length: BOARD_SIZE }, () => CELL_STATES.EMPTY)
   );
@@ -126,7 +137,7 @@ function boardViewToGrid(boardView, isPlayer) {
 }
 
 function extractSunkShips(boardView) {
-  if (!boardView.ships) return [];
+  if (!boardView?.ships) return [];
   return boardView.ships.filter((s) => s.sunk).map((s) => s.type);
 }
 

@@ -141,6 +141,18 @@ export default function GamePage() {
   const copyTimeoutRef = useRef(null);
   const linkInputRef = useRef(null);
 
+  // Reset local placement state when gameId changes (rematch)
+  useEffect(() => {
+    setLocalBoard(createEmptyBoard());
+    setShipTypeMap(createEmptyMap());
+    setPreviewBoard(null);
+    setPlacedShips([]);
+    setSelectedShip(SHIPS[0]);
+    setOrientation(ORIENTATIONS.HORIZONTAL);
+    setCopied(false);
+    setPlacementSubmitted(false);
+  }, [gameId]);
+
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);

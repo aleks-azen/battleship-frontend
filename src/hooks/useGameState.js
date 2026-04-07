@@ -48,6 +48,28 @@ export default function useGameState(gameId) {
   const submittingRef = useRef(false);
   const isSpectator = !playerToken;
 
+  // Reset all state when gameId changes (e.g. rematch navigates to new game)
+  useEffect(() => {
+    setPhase(GAME_PHASES.WAITING);
+    setPlayerBoard(createEmptyBoard());
+    setOpponentBoard(createEmptyBoard());
+    setPlayerToken(getStored(gameId, 'token'));
+    setIsMyTurn(false);
+    setLastResult(null);
+    setWinner(null);
+    setError(null);
+    setSunkShips({ mine: [], theirs: [] });
+    setIsAiMode(getStored(gameId, 'mode') === GAME_MODES.AI);
+    setAiShotPending(null);
+    setFiring(false);
+    setPlayerShipTypeMap(null);
+    setSpectator(null);
+    updatedAtRef.current = null;
+    gameModeSetRef.current = false;
+    submittingRef.current = false;
+    firingRef.current = false;
+  }, [gameId]);
+
   const saveToken = useCallback((token) => {
     setPlayerToken(token);
     if (gameId) setStored(gameId, 'token', token);
