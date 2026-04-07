@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 function getHeaders(playerToken) {
   const headers = { 'Content-Type': 'application/json' };
