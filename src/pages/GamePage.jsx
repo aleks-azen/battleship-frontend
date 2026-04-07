@@ -123,6 +123,7 @@ export default function GamePage() {
   const [orientation, setOrientation] = useState(ORIENTATIONS.HORIZONTAL);
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef(null);
+  const linkInputRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -216,15 +217,22 @@ export default function GamePage() {
 
   const joinUrl = `${window.location.origin}/game/${gameId}/join`;
 
+  const markCopied = useCallback(() => {
+    setCopied(true);
+    if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+  }, []);
+
   const handleCopyLink = useCallback(() => {
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(joinUrl).then(() => {
-        setCopied(true);
-        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-        copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
-      }).catch(() => {});
+      navigator.clipboard.writeText(joinUrl).then(markCopied).catch(() => {});
+    } else if (linkInputRef.current) {
+      linkInputRef.current.select();
+      linkInputRef.current.setSelectionRange(0, linkInputRef.current.value.length);
+      document.execCommand('copy');
+      markCopied();
     }
-  }, [joinUrl]);
+  }, [joinUrl, markCopied]);
 
   const handleRematch = useCallback(async () => {
     const mode = getStored(gameId, 'mode') || GAME_MODES.AI;
@@ -266,9 +274,10 @@ export default function GamePage() {
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
             <Box
               component="input"
+              ref={linkInputRef}
               readOnly
               value={joinUrl}
-              onClick={(e) => e.target.select()}
+              onClick={(e) => e.target.setSelectionRange(0, e.target.value.length)}
               sx={{
                 width: { xs: '260px', sm: '380px' },
                 px: 1.5,

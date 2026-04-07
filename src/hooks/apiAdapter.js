@@ -81,16 +81,17 @@ function boardViewToGrid(boardView, isPlayer) {
   const grid = Array.from({ length: BOARD_SIZE }, () =>
     Array.from({ length: BOARD_SIZE }, () => CELL_STATES.EMPTY)
   );
-  const typeMap = Array.from({ length: BOARD_SIZE }, () =>
-    Array.from({ length: BOARD_SIZE }, () => null)
-  );
 
   const hits = boardView.hits || [];
   const shots = boardView.shots || [];
-  const hitSet = coordSet(hits);
+  let typeMap = null;
 
-  // Player board: mark ship cells (sunk > hit > ship) in a single pass
+  // Player board: mark ship cells (sunk > hit > ship) and build typeMap
   if (isPlayer && boardView.ships) {
+    typeMap = Array.from({ length: BOARD_SIZE }, () =>
+      Array.from({ length: BOARD_SIZE }, () => null)
+    );
+    const hitSet = coordSet(hits);
     for (const ship of boardView.ships) {
       const state = ship.sunk ? CELL_STATES.SUNK : null;
       for (const c of shipCells(ship)) {
