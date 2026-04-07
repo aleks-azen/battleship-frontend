@@ -83,16 +83,15 @@ export default function useGameState(gameId) {
       (phase === GAME_PHASES.FIRING && !isMyTurn);
 
     if (shouldPoll) {
-      pollGameState();
+      const initialPoll = setTimeout(pollGameState, 0);
       pollingRef.current = setInterval(pollGameState, 1500);
-    }
 
-    return () => {
-      if (pollingRef.current) {
+      return () => {
+        clearTimeout(initialPoll);
         clearInterval(pollingRef.current);
         pollingRef.current = null;
-      }
-    };
+      };
+    }
   }, [phase, isMyTurn, gameId, playerToken, pollGameState, isAiMode]);
 
   useEffect(() => {

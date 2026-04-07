@@ -119,10 +119,12 @@ export default function GamePage() {
   const [copied, setCopied] = useState(false);
   const [flashCells, setFlashCells] = useState(null);
   const flashTimerRef = useRef(null);
+  const copyTimeoutRef = useRef(null);
 
   useEffect(() => {
     return () => {
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     };
   }, []);
 
@@ -233,7 +235,8 @@ export default function GamePage() {
     const url = `${window.location.origin}/game/${gameId}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     });
   }, [gameId]);
 
