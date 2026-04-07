@@ -39,6 +39,7 @@ export default function useGameState(gameId) {
   const [aiShotPending, setAiShotPending] = useState(null);
   const [firing, setFiring] = useState(false);
   const [playerShipTypeMap, setPlayerShipTypeMap] = useState(null);
+  const [opponentJoined, setOpponentJoined] = useState(false);
   const [spectator, setSpectator] = useState(null);
   const updatedAtRef = useRef(null);
   const pollingRef = useRef(null);
@@ -63,6 +64,7 @@ export default function useGameState(gameId) {
     setAiShotPending(null);
     setFiring(false);
     setPlayerShipTypeMap(null);
+    setOpponentJoined(false);
     setSpectator(null);
     updatedAtRef.current = null;
     gameModeSetRef.current = false;
@@ -91,6 +93,7 @@ export default function useGameState(gameId) {
       if (state.winner) setWinner(state.winner);
       if (state.sunkShips) setSunkShips(state.sunkShips);
       if (state.lastResult) setLastResult(state.lastResult);
+      if (state.opponentJoined !== undefined) setOpponentJoined(state.opponentJoined);
       if (state.mode && !gameModeSetRef.current) {
         gameModeSetRef.current = true;
         setIsAiMode(state.mode === GAME_MODES.AI);
@@ -247,6 +250,7 @@ export default function useGameState(gameId) {
     error,
     sunkShips,
     isAiMode,
+    opponentJoined,
     aiShotPending,
     firing,
     isSpectator,

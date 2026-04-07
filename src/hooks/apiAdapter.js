@@ -183,6 +183,7 @@ function adaptGameState(raw) {
     isMyTurn,
     winner,
     mode,
+    opponentJoined: raw.opponentJoined ?? false,
     updatedAt: raw.updatedAt,
     sunkShips: {
       mine: extractSunkShips(raw.playerBoard),

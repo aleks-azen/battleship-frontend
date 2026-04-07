@@ -121,6 +121,7 @@ export default function GamePage() {
     error,
     sunkShips,
     isAiMode,
+    opponentJoined,
     aiShotPending,
     firing,
     isSpectator,
@@ -390,7 +391,7 @@ export default function GamePage() {
         winner={winner}
         statusMessage={
           isAiMode && phase === GAME_PHASES.WAITING ? STATUS_MESSAGES[GAME_PHASES.PLACING]
-          : placementSubmitted && phase === GAME_PHASES.WAITING ? STATUS_MESSAGES.WAITING_FOR_PLACEMENT
+          : opponentJoined && phase === GAME_PHASES.WAITING ? STATUS_MESSAGES.WAITING_FOR_PLACEMENT
           : undefined
         }
       />
