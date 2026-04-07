@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -28,6 +28,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [joinId, setJoinId] = useState('');
+  const parsedGameId = useMemo(() => extractGameId(joinId), [joinId]);
 
   async function handleCreate(mode) {
     setLoading(true);
@@ -48,8 +49,8 @@ export default function HomePage() {
   }
 
   async function handleJoin() {
-    const gameId = extractGameId(joinId);
-    if (!gameId) return;
+    if (!parsedGameId) return;
+    const gameId = parsedGameId;
     setLoading(true);
     setError(null);
     try {
@@ -177,7 +178,7 @@ export default function HomePage() {
           />
           <Button
             variant="outlined"
-            disabled={loading || !extractGameId(joinId)}
+            disabled={loading || !parsedGameId}
             onClick={handleJoin}
             sx={{ textTransform: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}
           >
