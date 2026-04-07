@@ -18,6 +18,7 @@ import {
   SHIPS,
   ORIENTATIONS,
   CELL_STATES,
+  WINNER,
 } from '../content/game';
 
 function createEmptyBoard() {
@@ -107,7 +108,6 @@ export default function GamePage() {
     firing,
     fireShot,
     submitPlacements,
-    setGameMode,
   } = gameState;
 
   const [localBoard, setLocalBoard] = useState(createEmptyBoard);
@@ -226,11 +226,8 @@ export default function GamePage() {
   }, [placedShips, submitPlacements]);
 
   const handleFire = useCallback((row, col) => {
-    if (!isMyTurn || !isFiring || firing) return;
-    const cellState = opponentBoard?.[row]?.[col];
-    if (cellState === CELL_STATES.HIT || cellState === CELL_STATES.MISS || cellState === CELL_STATES.SUNK) return;
     fireShot(row, col);
-  }, [isMyTurn, isFiring, firing, fireShot, opponentBoard]);
+  }, [fireShot]);
 
   const handleCopyLink = useCallback(() => {
     const url = `${window.location.origin}/game/${gameId}`;
@@ -397,7 +394,7 @@ export default function GamePage() {
             }}
           >
             <Box sx={{ mb: 3 }}>
-              {winner === 'me' ? (
+              {winner === WINNER.ME ? (
                 <EmojiEventsIcon sx={{ fontSize: 64, color: '#ffc107' }} />
               ) : (
                 <SentimentVeryDissatisfiedIcon sx={{ fontSize: 64, color: 'text.secondary' }} />
@@ -407,13 +404,13 @@ export default function GamePage() {
                 sx={{
                   fontWeight: 800,
                   mt: 1,
-                  color: winner === 'me' ? '#ffc107' : 'error.main',
+                  color: winner === WINNER.ME ? '#ffc107' : 'error.main',
                 }}
               >
-                {winner === 'me' ? 'Victory!' : 'Defeat!'}
+                {winner === WINNER.ME ? 'Victory!' : 'Defeat!'}
               </Typography>
               <Typography variant="body1" sx={{ color: 'text.secondary', mt: 1 }}>
-                {winner === 'me'
+                {winner === WINNER.ME
                   ? 'You sank all enemy ships!'
                   : 'Your fleet has been destroyed.'}
               </Typography>

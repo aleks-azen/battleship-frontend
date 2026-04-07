@@ -46,3 +46,13 @@ export const ORIENTATIONS = {
   HORIZONTAL: 'HORIZONTAL',
   VERTICAL: 'VERTICAL',
 };
+
+export const GAME_MODES = {
+  AI: 'AI',
+  MULTIPLAYER: 'MULTIPLAYER',
+};
+
+export const WINNER = {
+  ME: 'me',
+  OPPONENT: 'opponent',
+};

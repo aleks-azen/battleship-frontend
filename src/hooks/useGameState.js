@@ -1,34 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import useApi from './useApi';
-import { GAME_PHASES, BOARD_SIZE } from '../content/game';
+import { GAME_PHASES, BOARD_SIZE, CELL_STATES, GAME_MODES } from '../content/game';
 
 function createEmptyBoard() {
   return Array.from({ length: BOARD_SIZE }, () =>
-    Array.from({ length: BOARD_SIZE }, () => 'empty')
+    Array.from({ length: BOARD_SIZE }, () => CELL_STATES.EMPTY)
   );
 }
 
-function getStoredToken(gameId) {
+function getStored(gameId, key) {
   try {
-    return sessionStorage.getItem(`battleship-token-${gameId}`);
+    return sessionStorage.getItem(`battleship-${key}-${gameId}`);
   } catch {
     return null;
   }
 }
 
-function storeToken(gameId, token) {
+function setStored(gameId, key, value) {
   try {
-    sessionStorage.setItem(`battleship-token-${gameId}`, token);
+    sessionStorage.setItem(`battleship-${key}-${gameId}`, value);
   } catch {
     // sessionStorage not available
-  }
-}
-
-function getStoredMode(gameId) {
-  try {
-    return sessionStorage.getItem(`battleship-mode-${gameId}`);
-  } catch {
-    return null;
   }
 }
 
@@ -37,23 +29,24 @@ export default function useGameState(gameId) {
   const [phase, setPhase] = useState(GAME_PHASES.WAITING);
   const [playerBoard, setPlayerBoard] = useState(createEmptyBoard);
   const [opponentBoard, setOpponentBoard] = useState(createEmptyBoard);
-  const [playerToken, setPlayerToken] = useState(() => getStoredToken(gameId));
+  const [playerToken, setPlayerToken] = useState(() => getStored(gameId, 'token'));
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [winner, setWinner] = useState(null);
   const [error, setError] = useState(null);
   const [sunkShips, setSunkShips] = useState({ mine: [], theirs: [] });
-  const [gameMode, setGameMode] = useState(() => getStoredMode(gameId));
+  const [isAiMode, setIsAiMode] = useState(() => getStored(gameId, 'mode') === GAME_MODES.AI);
   const [aiShotPending, setAiShotPending] = useState(null);
   const [firing, setFiring] = useState(false);
   const updatedAtRef = useRef(null);
   const pollingRef = useRef(null);
-
-  const isAiMode = gameMode === 'AI';
+  const firingRef = useRef(false);
+  const aiTimerRef = useRef(null);
+  const gameModeSetRef = useRef(isAiMode);
 
   const saveToken = useCallback((token) => {
     setPlayerToken(token);
-    if (gameId) storeToken(gameId, token);
+    if (gameId) setStored(gameId, 'token', token);
   }, [gameId]);
 
   const pollGameState = useCallback(async () => {
@@ -70,11 +63,14 @@ export default function useGameState(gameId) {
       if (state.winner) setWinner(state.winner);
       if (state.sunkShips) setSunkShips(state.sunkShips);
       if (state.lastResult) setLastResult(state.lastResult);
-      if (state.mode && !gameMode) setGameMode(state.mode);
+      if (state.mode && !gameModeSetRef.current) {
+        gameModeSetRef.current = true;
+        setIsAiMode(state.mode === GAME_MODES.AI);
+      }
     } catch (err) {
       setError(err.message);
     }
-  }, [gameId, playerToken, api, gameMode]);
+  }, [gameId, playerToken, api]);
 
   useEffect(() => {
     if (!gameId || !playerToken) return;
@@ -98,8 +94,17 @@ export default function useGameState(gameId) {
     };
   }, [phase, isMyTurn, gameId, playerToken, pollGameState, isAiMode]);
 
+  useEffect(() => {
+    return () => {
+      if (aiTimerRef.current) clearTimeout(aiTimerRef.current);
+    };
+  }, []);
+
   const fireShot = useCallback(async (row, col) => {
-    if (!isMyTurn || phase !== GAME_PHASES.FIRING || firing) return;
+    if (!isMyTurn || phase !== GAME_PHASES.FIRING || firingRef.current) return;
+    const cellState = opponentBoard?.[row]?.[col];
+    if (cellState === CELL_STATES.HIT || cellState === CELL_STATES.MISS || cellState === CELL_STATES.SUNK) return;
+    firingRef.current = true;
     setFiring(true);
     try {
       const result = await api.fire(gameId, row, col, playerToken);
@@ -111,33 +116,37 @@ export default function useGameState(gameId) {
         setPhase(GAME_PHASES.GAME_OVER);
         if (result.winner) setWinner(result.winner);
         if (result.playerBoard) setPlayerBoard(result.playerBoard);
+        firingRef.current = false;
         setFiring(false);
         return;
       }
 
-      // AI mode: show AI counter-shot with a delay
       if (isAiMode && result.aiShot) {
         setIsMyTurn(false);
         setAiShotPending(result.aiShot);
-        setTimeout(() => {
+        aiTimerRef.current = setTimeout(() => {
+          aiTimerRef.current = null;
           setAiShotPending(null);
           if (result.playerBoard) setPlayerBoard(result.playerBoard);
           if (result.phase) setPhase(result.phase);
           if (result.isMyTurn !== undefined) setIsMyTurn(result.isMyTurn);
           if (result.winner) setWinner(result.winner);
+          firingRef.current = false;
           setFiring(false);
         }, 500);
       } else {
         if (result.phase) setPhase(result.phase);
         if (result.isMyTurn !== undefined) setIsMyTurn(result.isMyTurn);
         if (result.playerBoard) setPlayerBoard(result.playerBoard);
+        firingRef.current = false;
         setFiring(false);
       }
     } catch (err) {
       setError(err.message);
+      firingRef.current = false;
       setFiring(false);
     }
-  }, [gameId, playerToken, isMyTurn, phase, api, isAiMode, firing]);
+  }, [gameId, playerToken, isMyTurn, phase, api, isAiMode, opponentBoard]);
 
   const submitPlacements = useCallback(async (placements) => {
     try {
@@ -160,7 +169,6 @@ export default function useGameState(gameId) {
     winner,
     error,
     sunkShips,
-    gameMode,
     isAiMode,
     aiShotPending,
     firing,
@@ -170,6 +178,5 @@ export default function useGameState(gameId) {
     setPhase,
     setPlayerBoard,
     setError,
-    setGameMode,
   };
 }

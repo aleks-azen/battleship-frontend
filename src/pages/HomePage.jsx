@@ -11,6 +11,7 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import GroupIcon from '@mui/icons-material/Group';
 import AnchorIcon from '@mui/icons-material/Anchor';
 import useApi from '../hooks/useApi';
+import { GAME_MODES } from '../content/game';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ export default function HomePage() {
             variant="contained"
             fullWidth
             disabled={loading}
-            onClick={() => handleCreate('AI')}
+            onClick={() => handleCreate(GAME_MODES.AI)}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
             {loading ? <CircularProgress size={22} /> : 'Start Game'}
@@ -133,7 +134,7 @@ export default function HomePage() {
             variant="contained"
             fullWidth
             disabled={loading}
-            onClick={() => handleCreate('MULTIPLAYER')}
+            onClick={() => handleCreate(GAME_MODES.MULTIPLAYER)}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
             {loading ? <CircularProgress size={22} /> : 'Create Game'}

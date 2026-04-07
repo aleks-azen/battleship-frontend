@@ -1,13 +1,13 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
-import { GAME_PHASES, STATUS_MESSAGES } from '../content/game';
+import { GAME_PHASES, STATUS_MESSAGES, WINNER } from '../content/game';
 
 export default function StatusBar({ phase, isMyTurn, lastResult, sunkShips = { mine: [], theirs: [] }, winner }) {
   let message = '';
 
   if (phase === GAME_PHASES.GAME_OVER) {
-    message = winner === 'me' ? STATUS_MESSAGES.WIN : STATUS_MESSAGES.LOSE;
+    message = winner === WINNER.ME ? STATUS_MESSAGES.WIN : STATUS_MESSAGES.LOSE;
   } else if (phase === GAME_PHASES.FIRING) {
     message = isMyTurn ? STATUS_MESSAGES.YOUR_TURN : STATUS_MESSAGES.OPPONENT_TURN;
   } else {
