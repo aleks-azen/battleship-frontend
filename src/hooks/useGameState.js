@@ -79,6 +79,13 @@ export default function useGameState(gameId) {
     }
   }, [gameId, playerToken, api]);
 
+  // Initial state fetch on mount — ensures correct phase for completed/AI games
+  useEffect(() => {
+    if (!gameId || !playerToken) return;
+    pollGameState();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, playerToken]);
+
   useEffect(() => {
     if (!gameId || !playerToken) return;
     if (isAiMode) return;
@@ -89,11 +96,9 @@ export default function useGameState(gameId) {
       (phase === GAME_PHASES.FIRING && !isMyTurn);
 
     if (shouldPoll) {
-      const initialPoll = setTimeout(pollGameState, 0);
       pollingRef.current = setInterval(pollGameState, 1500);
 
       return () => {
-        clearTimeout(initialPoll);
         clearInterval(pollingRef.current);
         pollingRef.current = null;
       };
