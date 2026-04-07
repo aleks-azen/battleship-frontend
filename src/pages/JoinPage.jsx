@@ -20,9 +20,11 @@ export default function JoinPage() {
     if (!gameId || joinedRef.current) return;
     joinedRef.current = true;
 
+    let mounted = true;
     api
       .joinGame(gameId)
       .then((result) => {
+        if (!mounted) return;
         if (result.playerToken) {
           setStored(gameId, 'token', result.playerToken);
         }
@@ -30,8 +32,11 @@ export default function JoinPage() {
         navigate(`/game/${gameId}`, { replace: true });
       })
       .catch((err) => {
+        if (!mounted) return;
         setError(err.message);
       });
+
+    return () => { mounted = false; };
   }, [gameId, api, navigate]);
 
   return (

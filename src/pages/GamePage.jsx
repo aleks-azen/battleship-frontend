@@ -97,7 +97,6 @@ export default function GamePage() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const api = useApi();
-  const gameState = useGameState(gameId);
   const {
     phase,
     playerBoard,
@@ -112,7 +111,8 @@ export default function GamePage() {
     firing,
     fireShot,
     submitPlacements,
-  } = gameState;
+    setError,
+  } = useGameState(gameId);
 
   const [localBoard, setLocalBoard] = useState(createEmptyBoard);
   const [shipTypeMap, setShipTypeMap] = useState(createEmptyMap);
@@ -235,14 +235,15 @@ export default function GamePage() {
     fireShot(row, col);
   }, [fireShot]);
 
+  const joinUrl = `${window.location.origin}/game/${gameId}/join`;
+
   const handleCopyLink = useCallback(() => {
-    const url = `${window.location.origin}/game/${gameId}/join`;
-    navigator.clipboard.writeText(url).then(() => {
+    navigator.clipboard.writeText(joinUrl).then(() => {
       setCopied(true);
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
       copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     });
-  }, [gameId]);
+  }, [joinUrl]);
 
   const handleRematch = useCallback(async () => {
     const mode = getStored(gameId, 'mode') || GAME_MODES.AI;
@@ -254,9 +255,9 @@ export default function GamePage() {
       setStored(result.gameId, 'mode', mode);
       navigate(`/game/${result.gameId}`);
     } catch (err) {
-      gameState.setError(err.message);
+      setError(err.message);
     }
-  }, [gameId, api, navigate, gameState]);
+  }, [gameId, api, navigate, setError]);
 
   const displayBoard = previewBoard || localBoard;
 
@@ -288,7 +289,7 @@ export default function GamePage() {
             onClick={handleCopyLink}
             sx={{ textTransform: 'none', fontSize: '13px' }}
           >
-            {copied ? 'Copied!' : `${window.location.origin}/game/${gameId}/join`}
+            {copied ? 'Copied!' : joinUrl}
           </Button>
         </Box>
       )}
