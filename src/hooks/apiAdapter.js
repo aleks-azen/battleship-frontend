@@ -6,6 +6,7 @@ import {
   CELL_STATES,
   BOARD_SIZE,
   SHIPS,
+  ORIENTATIONS,
   WINNER,
 } from '../content/game';
 
@@ -21,26 +22,45 @@ const BACKEND_MODE_TO_FRONTEND = {
   MULTIPLAYER: GAME_MODES.MULTIPLAYER,
 };
 
+const BACKEND_STATUS = {
+  PLACING_SHIPS: 'PLACING_SHIPS',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+};
+
+const BACKEND_TURN = {
+  SELF: 'you',
+  OPPONENT: 'opponent',
+};
+
+const WINNER_MAP = {
+  [BACKEND_TURN.SELF]: WINNER.ME,
+  [BACKEND_TURN.OPPONENT]: WINNER.OPPONENT,
+};
+
 function statusToPhase(status, mode) {
   switch (status) {
-    case 'PLACING_SHIPS':
-      // For multiplayer, show share link + placement UI;
-      // for single-player, go straight to placement.
-      return mode === 'MULTIPLAYER'
+    case BACKEND_STATUS.PLACING_SHIPS:
+      // Multiplayer keeps share-link visible during placement
+      return mode === GAME_MODES.MULTIPLAYER
         ? GAME_PHASES.WAITING
         : GAME_PHASES.PLACING;
-    case 'IN_PROGRESS':
+    case BACKEND_STATUS.IN_PROGRESS:
       return GAME_PHASES.FIRING;
-    case 'COMPLETED':
+    case BACKEND_STATUS.COMPLETED:
       return GAME_PHASES.GAME_OVER;
     default:
       return GAME_PHASES.WAITING;
   }
 }
 
+function coordKey(row, col) {
+  return `${row},${col}`;
+}
+
 function coordSet(coords) {
   const set = new Set();
-  for (const c of coords) set.add(`${c.row},${c.col}`);
+  for (const c of coords) set.add(coordKey(c.row, c.col));
   return set;
 }
 
@@ -48,7 +68,7 @@ function shipCells(ship) {
   const size = SHIP_SIZES[ship.type] || 1;
   const cells = [];
   for (let i = 0; i < size; i++) {
-    if (ship.orientation === 'HORIZONTAL') {
+    if (ship.orientation === ORIENTATIONS.HORIZONTAL) {
       cells.push({ row: ship.origin.row, col: ship.origin.col + i });
     } else {
       cells.push({ row: ship.origin.row + i, col: ship.origin.col });
@@ -62,21 +82,18 @@ function boardViewToGrid(boardView, isPlayer) {
     Array.from({ length: BOARD_SIZE }, () => CELL_STATES.EMPTY)
   );
 
-  const hitSet = coordSet(boardView.hits || []);
-  const shotSet = coordSet(boardView.shots || []);
+  const hits = boardView.hits || [];
+  const shots = boardView.shots || [];
+  const hitSet = coordSet(hits);
 
+  // Player board: mark ship cells (sunk > hit > ship) in a single pass
   if (isPlayer && boardView.ships) {
-    const sunkCells = new Set();
     for (const ship of boardView.ships) {
-      if (ship.sunk) {
-        for (const c of shipCells(ship)) sunkCells.add(`${c.row},${c.col}`);
-      }
-    }
-    for (const ship of boardView.ships) {
+      const state = ship.sunk ? CELL_STATES.SUNK : null;
       for (const c of shipCells(ship)) {
-        const key = `${c.row},${c.col}`;
-        if (sunkCells.has(key)) {
-          grid[c.row][c.col] = CELL_STATES.SUNK;
+        const key = coordKey(c.row, c.col);
+        if (state) {
+          grid[c.row][c.col] = state;
         } else if (hitSet.has(key)) {
           grid[c.row][c.col] = CELL_STATES.HIT;
         } else {
@@ -86,16 +103,17 @@ function boardViewToGrid(boardView, isPlayer) {
     }
   }
 
-  for (const shot of boardView.shots || []) {
-    const key = `${shot.row},${shot.col}`;
-    if (grid[shot.row][shot.col] === CELL_STATES.EMPTY) {
-      grid[shot.row][shot.col] = CELL_STATES.MISS;
+  // Opponent board: mark hits first so the shots loop only adds misses
+  if (!isPlayer) {
+    for (const hit of hits) {
+      grid[hit.row][hit.col] = CELL_STATES.HIT;
     }
   }
 
-  if (!isPlayer) {
-    for (const hit of boardView.hits || []) {
-      grid[hit.row][hit.col] = CELL_STATES.HIT;
+  // Mark remaining shots as misses (cells already marked are skipped)
+  for (const shot of shots) {
+    if (grid[shot.row][shot.col] === CELL_STATES.EMPTY) {
+      grid[shot.row][shot.col] = CELL_STATES.MISS;
     }
   }
 
@@ -108,12 +126,12 @@ function extractSunkShips(boardView) {
 }
 
 function adaptGameState(raw) {
-  const phase = statusToPhase(raw.status, raw.mode);
+  const mode = BACKEND_MODE_TO_FRONTEND[raw.mode] || raw.mode;
+  const phase = statusToPhase(raw.status, mode);
   const playerBoard = boardViewToGrid(raw.playerBoard, true);
   const opponentBoard = boardViewToGrid(raw.opponentBoard, false);
-  const isMyTurn = raw.currentTurn === 'you';
-  const winner = raw.winnerId === 'you' ? WINNER.ME : raw.winnerId === 'opponent' ? WINNER.OPPONENT : null;
-  const mode = BACKEND_MODE_TO_FRONTEND[raw.mode] || raw.mode;
+  const isMyTurn = raw.currentTurn === BACKEND_TURN.SELF;
+  const winner = WINNER_MAP[raw.winnerId] || null;
 
   return {
     phase,
@@ -148,9 +166,7 @@ export default function useApiAdapter() {
   );
 
   const joinGame = useCallback(
-    async (gameId) => {
-      return api.joinGame(gameId);
-    },
+    (gameId) => api.joinGame(gameId),
     [api]
   );
 
@@ -176,16 +192,11 @@ export default function useApiAdapter() {
       const adapted = adaptGameState(stateRaw);
 
       return {
+        ...adapted,
         result: raw.result,
         coordinate: raw.coordinate,
         sunkShip: raw.sunkShip,
         gameOver: raw.gameOver,
-        winner: adapted.winner,
-        phase: adapted.phase,
-        playerBoard: adapted.playerBoard,
-        opponentBoard: adapted.opponentBoard,
-        isMyTurn: adapted.isMyTurn,
-        sunkShips: adapted.sunkShips,
         aiShot: raw.aiResult ? raw.aiResult.coordinate : null,
       };
     },
